@@ -114,15 +114,14 @@
                 <p id="tooltip-word" class="text-xl font-black italic text-white"></p>
             </div>
             <div class="h-10 w-10 rounded-full bg-amber-600/10 flex items-center justify-center">
-                <span class="text-amber-500 font-black">!</span>
+                <span class="text-amber-500 font-black font-mono">!</span>
             </div>
         </div>
         <p id="tooltip-text" class="mb-6 opacity-80 leading-relaxed whitespace-pre-line"></p>
-        <div id="tooltip-example" class="space-y-3 bg-black/30 p-5 rounded-2xl border-l-4 border-amber-600 font-medium leading-relaxed whitespace-pre-line text-amber-100/90"></div>
+        <div id="tooltip-example" class="space-y-3 bg-black/30 p-6 rounded-2xl border-l-4 border-amber-600 font-medium leading-relaxed whitespace-pre-line text-amber-100/90"></div>
     </div>
 
     <div class="flex flex-col lg:flex-row min-h-screen">
-        <!-- Main Workspace -->
         <main class="w-full lg:w-[60%] p-6 lg:p-10 xl:p-14">
             <header class="mb-10 flex flex-col md:flex-row justify-between items-start md:items-end gap-6">
                 <div>
@@ -154,7 +153,6 @@
             </div>
         </main>
 
-        <!-- Sidebar Summary -->
         <aside class="w-full lg:w-[40%] sidebar p-8 lg:p-10 lg:overflow-y-auto custom-scrollbar lg:max-h-screen flex flex-col">
             <div class="flex-grow">
                 <div class="flex items-center justify-between mb-8">
@@ -165,7 +163,6 @@
                     <span id="grade-level" class="px-4 py-1.5 bg-amber-600/20 text-amber-600 rounded-full text-[10px] font-black uppercase tracking-widest">Level: 0</span>
                 </div>
 
-                <!-- Core Stats -->
                 <div class="stat-card p-8 rounded-[2rem] mb-6">
                     <div class="grid grid-cols-3 gap-2 mb-8 text-center border-b border-white/5 pb-8">
                         <div>
@@ -198,7 +195,6 @@
                     </div>
                 </div>
 
-                <!-- Weakness Meter -->
                 <div class="mb-6 bg-amber-600/5 p-8 rounded-[2rem] border-2 border-amber-600/10">
                     <div class="flex justify-between items-end mb-4">
                         <p class="text-xs font-black uppercase tracking-widest opacity-80">Polished Prose Score</p>
@@ -209,10 +205,8 @@
                     </div>
                 </div>
 
-                <!-- Categories Grid -->
                 <div class="grid grid-cols-2 xl:grid-cols-3 gap-3 mb-6" id="category-list"></div>
 
-                <!-- Student Analytics -->
                 <div class="grid grid-cols-2 gap-3 mb-6">
                     <div class="stat-card p-6 rounded-3xl flex flex-col items-center border-rose-500/20 border">
                         <p class="text-[10px] font-black uppercase tracking-widest opacity-50 mb-2">Sensory Spice</p>
@@ -226,7 +220,6 @@
                     </div>
                 </div>
 
-                <!-- Repeated Words -->
                 <div class="bg-amber-600 p-8 rounded-[2rem] text-white shadow-2xl shadow-amber-900/20 mb-8">
                     <h3 class="text-xs font-black mb-5 uppercase tracking-[0.2em]">Repeated Families</h3>
                     <div id="freq-words" class="space-y-3">
@@ -235,7 +228,6 @@
                 </div>
             </div>
 
-            <!-- Copyright and Footer -->
             <div class="mt-auto pt-8 border-t border-white/5 opacity-30 text-center">
                 <p class="text-[10px] font-black uppercase tracking-[0.5em] mb-2">Finely Crafted</p>
                 <p class="text-[9px] font-bold tracking-widest">&copy; COPYRIGHT 2026 NIC COMINO. ALL RIGHTS RESERVED.</p>
@@ -249,21 +241,19 @@
         const listsData = [
             {
                 id: 'badstart',
-                title: "Weak Start",
+                title: "Opening Variety",
                 class: "hl-bad-start",
                 color: "text-blue-500",
                 isWeakness: true,
-                words: ["The", "It", "A", "An", "He", "She", "His", "Here", "This", "These", "Those", "They", "There", "Then", "I", "My", "We", "Our"],
-                strategy: "Leading with a generic subject or pronoun creates a flat mental image. Starting with a concrete noun pulls the reader directly into your scene.",
-                fallbackTip: "Weak: 'It was a cold morning.'\nStrong: 'Frost blanketed the windshield like a thin coat of lace.'",
+                words: ["The", "It", "A", "An", "He", "She", "His", "Her", "This", "These", "Those", "They", "There", "Then", "I", "My", "We", "Suddenly"],
+                strategy: "This paragraph relies too heavily on repetitive 'Noun/Verb' starts. Try mixing in Where, When, Why, Verb, or Feeling openers to vary your rhythm.",
+                fallbackTip: "Vary your starts:\n• WHERE: 'Beside the road, a lone tree stood.'\n• WHEN: 'During the storm, the power failed.'\n• WHY: 'To escape the cold, he ran inside.'\n• VERB: 'Smiling, she accepted the prize.'\n• FEELING: 'Thrilled with the news, he cheered.'",
                 specificTips: {
-                    "it": "Weak: 'It was a cold morning.'\nStrong: 'Frost blanketed the windshield like a thin coat of lace.'",
-                    "the": "Weak: 'The dog barked at the moon.'\nStrong: 'A mangy stray snarled at the postman.'",
-                    "there": "Weak: 'There was a loud crash.'\nStrong: 'A porcelain vase shattered against the hardwood floor.'",
-                    "he": "Weak: 'He felt scared.'\nStrong: 'His hands trembled as he reached for the rusted handle.'",
-                    "she": "Weak: 'She was happy.'\nStrong: 'A wide grin split her face as she clutched the trophy.'",
-                    "then": "Weak: 'Then the door opened.'\nStrong: 'The heavy oak door groaned on its hinges, revealing a dark hall.'",
-                    "i": "Weak: 'I saw the fire.'\nStrong: 'Orange flames licked at the ceiling, casting dancing shadows.'"
+                    "he": "Try a VERB start: 'Sprinting for his life, he dove for cover.'\nTry a WHERE start: 'Behind the old oak, he waited in silence.'",
+                    "the": "Try a WHEN start: 'After the final bell rang, the students bolted for the exit.'\nTry a WHERE start: 'Deep in the forest, the campfire crackled.'",
+                    "it": "Try a FEELING start: 'Amused by the spectacle, she watched it unfold.'\nTry a WHY start: 'To understand the puzzle, he took it apart.'",
+                    "suddenly": "Avoid 'Suddenly'—it's a 'telling' word. Just show the sudden action: 'A gunshot cracked through the stillness.'",
+                    "i": "Try a VERB start: 'Hiking up the mountain, I spotted a hawk.'\nTry a WHERE start: 'Beneath the surface, I found the treasure.'"
                 }
             },
             {
@@ -273,14 +263,12 @@
                 color: "text-red-500",
                 isWeakness: true,
                 words: ["am", "is", "are", "was", "were", "be", "being", "been", "have", "has", "had", "do", "does", "did", "get", "got", "getting", "gotten"],
-                strategy: "Helper verbs suggest passive or weak action. Swap for a vivid, active verb to boost the pace of your story.",
-                fallbackTip: "Weak: 'The ball was thrown by him.'\nStrong: 'He hurled the ball.'",
+                strategy: "Weak 'to-be' verbs often mask the energy of your story. Replace them with vivid action verbs.",
+                fallbackTip: "Weak: 'The ball was thrown.'\nStrong: 'He hurled the ball.'",
                 specificTips: {
-                    "was": "Weak: 'She was running.'\nStrong: 'She sprinted.'\n\nWeak: 'The door was open.'\nStrong: 'The door hung ajar on its rusted hinges.'",
-                    "got": "Weak: 'He got angry.'\nStrong: 'He slammed his fist into the table, rattling the tea cups.'",
-                    "is": "Weak: 'The city is loud.'\nStrong: 'Police sirens and jackhammers thundered through the streets.'",
-                    "had": "Weak: 'She had a red bag.'\nStrong: 'She gripped a cherry-red leather bag.'",
-                    "were": "Weak: 'The children were noisy.'\nStrong: 'The children shrieked and hollered across the playground.'"
+                    "was": "Weak: 'He was running.'\nStrong: 'He sprinted.'\n\nWeak: 'The door was open.'\nStrong: 'The door hung ajar on rusted hinges.'",
+                    "got": "Weak: 'He got scared.'\nStrong: 'Panic seized him, making his breath hitch.'",
+                    "is": "Weak: 'The park is loud.'\nStrong: 'Laughter and shrieks echoed through the park.'"
                 }
             },
             {
@@ -290,19 +278,14 @@
                 color: "text-purple-500",
                 isWeakness: true,
                 words: ["think", "thought", "believe", "feel", "felt", "notice", "noticed", "decide", "know", "knew", "see", "saw", "look", "looked", "wonder", "seem", "seemed", "hear", "heard", "realize", "realized", "decided", "understand", "understood", "remember", "remembered", "wondered"],
-                strategy: "Filter words distance the reader from the action. Describe the event directly to submerge the reader in the scene.",
-                fallbackTip: "Weak: 'I saw the birds fly away.'\nStrong: 'The birds scattered into the gray sky.'",
+                strategy: "Filter words distance the reader from the experience. Delete the filter to submerge the reader directly in the scene.",
+                fallbackTip: "Weak: 'I saw the fire.'\nStrong: 'Flames licked at the ceiling.'",
                 specificTips: {
-                    "decided": "Weak: 'He decided to leave.'\nStrong: 'He grabbed his coat and bolted for the exit.'",
-                    "knew": "Weak: 'She knew she was in trouble.'\nStrong: 'Her stomach twisted into a cold, hard knot.'",
-                    "heard": "Weak: 'I heard a loud bang.'\nStrong: 'A metallic bang thundered through the empty hallway.'",
+                    "decided": "Weak: 'He decided to run.'\nStrong: 'He bolted for the tree line.'",
+                    "knew": "Weak: 'She knew she was late.'\nStrong: 'The clock mocked her with every loud tick.'",
+                    "realized": "Weak: 'He realized he was lost.'\nStrong: 'The street signs were unreadable, faded by years of sun.'",
                     "saw": "Weak: 'I saw the dragon roar.'\nStrong: 'The dragon roared, shaking the loose stones from the ceiling.'",
-                    "realized": "Weak: 'He realized he was lost.'\nStrong: 'Unfamiliar streets stretched out in every direction.'",
-                    "felt": "Weak: 'She felt the cold wind.'\nStrong: 'The wind bit at her exposed cheeks like tiny needles.'",
-                    "thought": "Weak: 'He thought it was scary.'\nStrong: 'A chill raced down his spine as he stared into the dark room.'",
-                    "noticed": "Weak: 'He noticed the cat.'\nStrong: 'A black cat darted across the alleyway.'",
-                    "remembered": "Weak: 'She remembered the key.'\nStrong: 'The image of the brass key on the kitchen table flashed in her mind.'",
-                    "wondered": "Weak: 'He wondered what was inside.'\nStrong: 'He tilted his head, peering through the keyhole with narrowing eyes.'"
+                    "felt": "Weak: 'He felt the cold.'\nStrong: 'The wind bit through his jacket like icy needles.'"
                 }
             },
             {
@@ -312,17 +295,12 @@
                 color: "text-indigo-400",
                 isWeakness: true,
                 words: ["would", "meaning that", "started to", "began to", "used to", "proceeded to", "seemed to", "managed to", "going to", "was able to"],
-                strategy: "These patterns create 'lag' in your writing. Instead of telling us about the habit or the start of the action, jump straight into the action itself.",
-                fallbackTip: "Weak: 'He would often sit alone.'\nStrong: 'He sat alone.'",
+                strategy: "These patterns create 'lag' or wordiness. Jump straight into the action.",
+                fallbackTip: "Weak: 'He would sit there.'\nStrong: 'He sat there.'",
                 specificTips: {
-                    "would": "Weak: 'He would walk to school every day.'\nStrong: 'He walked to school every day.'\n\nWeak: 'The wind would howl through the trees.'\nStrong: 'The wind howled through the trees.'",
-                    "meaning that": "Weak: 'He slipped, meaning that he fell.'\nStrong: 'He slipped and crashed into the dirt.'\n\nWeak: 'The sun rose, meaning that it was morning.'\nStrong: 'Sunlight flooded the room, announcing the new day.'",
-                    "started to": "Weak: 'He started to run.'\nStrong: 'He sprinted.'\n\nWeak: 'The rain started to fall.'\nStrong: 'Rain lashed against the windows.'",
-                    "began to": "Weak: 'She began to cry.'\nStrong: 'Tears welled in her eyes and traced paths through the dust on her cheeks.'",
-                    "used to": "Weak: 'I used to like candy.'\nStrong: 'I loved candy.'",
-                    "seemed to": "Weak: 'The house seemed to grow taller.'\nStrong: 'The house loomed overhead.'",
-                    "managed to": "Weak: 'He managed to reach the handle.'\nStrong: 'He caught the handle.'",
-                    "was able to": "Weak: 'He was able to see the ship.'\nStrong: 'He saw the ship.'"
+                    "would": "Weak: 'He would walk to school.'\nStrong: 'He walked to school.'",
+                    "meaning that": "Weak: 'He tripped, meaning that he fell.'\nStrong: 'He tripped and crashed to the pavement.'",
+                    "started to": "Weak: 'The rain started to fall.'\nStrong: 'Rain lashed against the windows.'"
                 }
             },
             {
@@ -332,14 +310,11 @@
                 color: "text-pink-500",
                 isWeakness: true,
                 words: ["very", "really", "just", "quite", "too", "actually", "basically", "totally", "definitely", "literally", "simply", "truly", "extremely", "somewhat", "rather", "pretty", "highly"],
-                strategy: "Intensifiers are 'empty' modifiers that tell rather than show. Instead of using a helper word, find a single word with more impact.",
-                fallbackTip: "Weak: 'It was very hot.'\nStrong: 'It was sweltering.'",
+                strategy: "Intensifiers are 'empty' modifiers. Remove them or find a more powerful root word.",
+                fallbackTip: "Weak: 'Very hot.'\nStrong: 'Sweltering.'",
                 specificTips: {
-                    "very": "Weak: 'Very cold.'\nStrong: 'Freezing / Frozen / Bitter.'\n\nWeak: 'Very loud.'\nStrong: 'Deafening / Thundering.'",
-                    "just": "Weak: 'I just wanted to go.'\nStrong: 'I yearned to escape.'",
-                    "really": "Weak: 'He was really sad.'\nStrong: 'Grief crushed his chest like a massive weight.'",
-                    "too": "Weak: 'It was too big.'\nStrong: 'It was enormous / gargantuan / massive.'",
-                    "totally": "Weak: 'I was totally surprised.'\nStrong: 'The news left me speechless and stunned.'"
+                    "very": "Weak: 'Very loud.'\nStrong: 'Deafening / Thundering.'",
+                    "just": "Weak: 'I just wanted to leave.'\nStrong: 'I yearned to escape.'"
                 }
             },
             {
@@ -349,16 +324,12 @@
                 color: "text-amber-500",
                 isWeakness: true,
                 regex: /\b\w+ly\b/gi,
-                strategy: "Adverbs usually try to fix weak verbs. Instead of modifying a weak verb with '-ly', find a powerful verb that does the work on its own.",
-                fallbackTip: "Weak: 'He ran quickly.'\nStrong: 'He sprinted.'",
+                strategy: "Adverbs usually try to fix weak verbs. Find a powerful verb that does the work on its own.",
+                fallbackTip: "Weak: 'Ran quickly.'\nStrong: 'Sprinted.'",
                 specificTips: {
-                    "quickly": "Weak: 'Ran quickly.'\nStrong: 'Sprinted / Darted / Hurried / Bolted.'",
-                    "softly": "Weak: 'Spoke softly.'\nStrong: 'Whispered / Murmured / Breathed.'",
-                    "loudly": "Weak: 'Yelled loudly.'\nStrong: 'Bellowed / Shouted / Shrieked / Roared.'",
-                    "slowly": "Weak: 'Walked slowly.'\nStrong: 'Strolled / Sauntered / Crept / Trudged.'",
-                    "angrily": "Weak: 'He spoke angrily.'\nStrong: 'He snapped / spat the words / hissed.'",
-                    "sadly": "Weak: 'She looked sadly at him.'\nStrong: 'Her eyes brimmed with tears as she turned away.'",
-                    "happily": "Weak: 'They danced happily.'\nStrong: 'They twirled and leaped across the floor.'"
+                    "quickly": "Try: Sprinted, darted, hurried, bolted, dashed.",
+                    "softly": "Try: Whispered, murmured, breathed, hissed.",
+                    "loudly": "Try: Bellowed, shouted, shrieked, roared."
                 }
             },
             {
@@ -367,16 +338,12 @@
                 class: "hl-cliche",
                 color: "text-slate-500",
                 isWeakness: true,
-                words: ["cold as ice", "white as a sheet", "quiet as a mouse", "at the end of the day", "avoid like the plague", "piece of cake", "break the ice", "light as a feather", "red as a beet", "scared to death", "crying a river"],
-                strategy: "Clichés lose their flavor because they are overused. Try to invent an original comparison that belongs only to your story.",
-                fallbackTip: "Instead of using a common phrase, create a specific comparison for your character's world.",
+                words: ["cold as ice", "white as a sheet", "quiet as a mouse", "at the end of the day", "avoid like the plague", "piece of cake", "break the ice", "light as a feather", "red as a beet", "scared to death"],
+                strategy: "Clichés lose impact because they are overused. Try an original comparison.",
+                fallbackTip: "Original: 'Cold as a metal railing in mid-winter.'",
                 specificTips: {
                     "cold as ice": "Original: 'Cold as a metal railing in mid-winter.'",
-                    "quiet as a mouse": "Original: 'Quiet as a held breath.'",
-                    "white as a sheet": "Original: 'Pale as a bleached bone.'",
-                    "piece of cake": "Original: 'Simple as tying a shoelace.'",
-                    "scared to death": "Original: 'Petrified like a statue in a graveyard.'",
-                    "red as a beet": "Original: 'Crimson as a spilled bottle of ink.'"
+                    "quiet as a mouse": "Original: 'Quiet as a held breath.'"
                 }
             },
             {
@@ -385,15 +352,12 @@
                 class: "hl-sensory",
                 color: "text-rose-500",
                 isWeakness: false,
-                words: ["glistened", "shimmered", "roared", "thundered", "stale", "sweet", "rough", "velvety", "glared", "shadowy", "scented", "bitter", "crumbled", "fragrant", "sticky", "clattering", "murmuring"],
-                strategy: "Excellent sensory detail! This word helps your reader see, hear, or feel the scene more clearly.",
-                fallbackTip: "Great detail! Using words like this helps with 'Showing, Not Telling.'",
+                words: ["glistened", "shimmered", "roared", "thundered", "stale", "sweet", "rough", "velvety", "glared", "shadowy", "scented", "bitter", "crumbled", "fragrant", "sticky", "clattering"],
+                strategy: "Great sensory detail! This brings the scene to life for your reader.",
+                fallbackTip: "Sight, Sound, Smell, Touch, or Taste—keep using vivid descriptors!",
                 specificTips: {
-                    "glistened": "Sight! It helps the reader see the light reflecting in the scene.",
-                    "thundered": "Sound! It makes the scene feel intense and heavy.",
-                    "velvety": "Touch! It makes the object feel real and physical.",
-                    "bitter": "Taste! It adds a sharp flavor to the prose.",
-                    "shadowy": "Good for building atmosphere and visual mystery."
+                    "glistened": "Sight: Helps the reader see the light in your scene.",
+                    "thundered": "Sound: Makes the scene feel intense and heavy."
                 }
             },
             {
@@ -402,25 +366,16 @@
                 class: "hl-basic",
                 color: "text-emerald-500",
                 isWeakness: true,
-                words: ["nice", "good", "bad", "big", "small", "fun", "stuff", "thing", "walk", "run", "went", "came", "say", "said", "go", "make", "take", "find", "happy", "sad", "scared", "angry", "looked", "look", "found", "find", "things"],
-                strategy: "Upgrading to a more specific word gives your prose more precision and sensory flavor.",
-                fallbackTip: "Weak: 'It was a nice house.'\nStrong: 'A charming cottage stood on the hill.'",
+                words: ["nice", "good", "bad", "big", "small", "fun", "stuff", "thing", "walk", "run", "went", "came", "say", "said", "go", "make", "take", "find", "happy", "sad", "scared", "angry", "looked", "look", "found", "things"],
+                strategy: "Generic vocabulary lacks sensory flavor. Upgrade to precise, specific terminology.",
+                fallbackTip: "Weak: 'It was a nice car.'\nStrong: 'A vintage Jaguar gleamed in the driveway.'",
                 specificTips: {
-                    "said": "Try: Whispered, argued, groaned, barked, admitted, blurted, hissed.",
-                    "walked": "Try: Stumbled, strutted, crept, lumbered, strolled, marched.",
-                    "run": "Try: Sprinted, galloped, dashed, scrambled, surged.",
-                    "big": "Try: Towering, vast, hulking, massive, colossal, gargantuan.",
-                    "small": "Try: Minute, cramped, tiny, microscopic, pint-sized.",
-                    "good": "Try: Superb, flawless, magnificent, delightful, outstanding.",
-                    "bad": "Try: Dreadful, hideous, vile, catastrophic, grim.",
-                    "went": "Try: Marched, retreated, ventured, hurried, migrated.",
-                    "stuff": "Try: Gear, clutter, debris, treasure, artifacts, belongings.",
-                    "things": "Try: Artifacts, items, obstacles, possessions, components.",
-                    "scared": "Show it: Heart hammering, cold sweat, knees trembling, breath hitching.",
-                    "happy": "Show it: Beaming, radiant, ecstatic, glowing, light on their feet.",
-                    "sad": "Show it: Heavy-hearted, tear-streaked, slumped, hollow, desolate.",
-                    "look": "Try: Peer, gaze, glare, squint, observe, inspect.",
-                    "found": "Try: Discovered, unearthed, stumbled upon, retrieved, identified."
+                    "said": "Try: Whispered, barked, admitted, hissed, blurted.",
+                    "walked": "Try: Stumbled, strutted, crept, lumbered, strolled.",
+                    "big": "Try: Towering, vast, hulking, massive, colossal.",
+                    "scared": "Show it: Heart hammering, cold sweat, knees trembling.",
+                    "happy": "Show it: Beaming, radiant, glowing, light on their feet.",
+                    "look": "Try: Peer, gaze, glare, squint, observe, inspect."
                 }
             }
         ];
@@ -432,14 +387,11 @@
         const tooltipText = document.getElementById('tooltip-text');
         const tooltipExample = document.getElementById('tooltip-example');
 
-        function toggleTheme() {
-            document.body.classList.toggle('light-mode');
-        }
+        function toggleTheme() { document.body.classList.toggle('light-mode'); }
 
         function toggleTips() {
             tipsEnabled = !tipsEnabled;
-            const btn = document.getElementById('tip-toggle');
-            btn.style.opacity = tipsEnabled ? "1" : "0.4";
+            document.getElementById('tip-toggle').style.opacity = tipsEnabled ? "1" : "0.4";
             if (!tipsEnabled) tooltip.style.display = "none";
         }
 
@@ -453,9 +405,7 @@
         }
 
         function getStem(word) {
-            return word.toLowerCase()
-                .replace(/(ing|ed|es|ly|s)$/, '')
-                .replace(/([aeiou])\1$/, '$1'); 
+            return word.toLowerCase().replace(/(ing|ed|es|ly|s)$/, '').replace(/([aeiou])\1$/, '$1'); 
         }
 
         function analyzeText() {
@@ -464,48 +414,52 @@
 
             const words = rawText.match(/\b\w+\b/g) || [];
             const wordCount = words.length;
-            const sentenceMatches = rawText.match(/[^.?!]+[.?!]+/g) || [rawText];
+            const sentenceMatches = rawText.match(/[^.?!]+[.?!]*/g) || [rawText];
             
             const matchMap = new Map();
             let actualWeaknessCount = 0;
             let sensoryCount = 0;
 
-            // 1. Analyze Fixed Lists
-            listsData.forEach(list => {
-                let regex;
-                if (list.id === 'badstart') {
-                    regex = new RegExp(`(^|[.?!]\\s+)(${list.words.join('|')})\\b`, 'gi');
-                } else if (list.regex) {
-                    regex = list.regex;
-                } else {
-                    const sortedWords = [...list.words].sort((a,b) => b.length - a.length);
-                    regex = new RegExp(`\\b(${sortedWords.join('|')})\\b`, 'gi');
+            const paragraphs = rawText.split(/\n+/);
+            const badStartCategory = listsData.find(l => l.id === 'badstart');
+            const badStartList = new Set(badStartCategory.words.map(w => w.toLowerCase()));
+            
+            let currentParaStartIdx = 0;
+            paragraphs.forEach(para => {
+                if (!para.trim()) { currentParaStartIdx += para.length + 1; return; }
+                const sentences = para.match(/[^.?!]+[.?!]*/g) || [para];
+                let badStartSentences = [];
+                sentences.forEach(sent => {
+                    const firstWordMatch = sent.trim().match(/^\b\w+\b/i);
+                    if (firstWordMatch && badStartList.has(firstWordMatch[0].toLowerCase())) {
+                        badStartSentences.push({ index: currentParaStartIdx + sent.indexOf(firstWordMatch[0]), word: firstWordMatch[0], len: firstWordMatch[0].length });
+                    }
+                    currentParaStartIdx += sent.length;
+                });
+                if (sentences.length > 1 && (badStartSentences.length / sentences.length) >= 0.4) {
+                    badStartSentences.forEach(bs => {
+                        matchMap.set(bs.index, { len: bs.len, category: badStartCategory, rawWord: bs.word });
+                        actualWeaknessCount++;
+                    });
                 }
+                currentParaStartIdx += 1; 
+            });
 
+            listsData.filter(l => l.id !== 'badstart').forEach(list => {
+                const regex = list.regex || new RegExp(`\\b(${[...list.words].sort((a,b) => b.length - a.length).join('|')})\\b`, 'gi');
                 let m;
                 while ((m = regex.exec(rawText)) !== null) {
-                    let index = m.index;
-                    let text = m[0];
-                    if (list.id === 'badstart') {
-                        index += m[1].length;
-                        text = m[2];
-                    }
-                    if (!matchMap.has(index)) {
-                        matchMap.set(index, { 
-                            len: text.length, 
-                            category: list,
-                            rawWord: text
-                        });
+                    if (!matchMap.has(m.index)) {
+                        matchMap.set(m.index, { len: m[0].length, category: list, rawWord: m[0] });
                         if (list.isWeakness) actualWeaknessCount++;
                         if (list.id === 'sensory') sensoryCount++;
                     }
                 }
             });
 
-            // 2. Repetition Analysis
-            const stopWords = new Set(["a", "an", "the", "and", "but", "or", "so", "if", "of", "in", "on", "at", "by", "with", "from", "to", "is", "was", "were", "are", "be", "been", "being", "have", "has", "had", "do", "does", "did", "will", "would", "shall", "should", "can", "could", "may", "might", "must", "it", "its", "they", "them", "their", "this", "that", "these", "those", "he", "him", "his", "she", "her", "hers", "we", "us", "our", "ours", "i", "me", "my", "mine", "you", "your", "yours"]);
             const stemFreq = {};
             const familyMap = {}; 
+            const stopWords = new Set(["a", "an", "the", "and", "but", "or", "so", "if", "of", "in", "on", "at", "by", "with", "from", "to", "is", "was", "were", "are", "be", "been", "being", "have", "has", "had", "do", "does", "did", "will", "would", "shall", "should", "can", "could", "may", "might", "must", "it", "its", "they", "them", "their", "this", "that", "these", "those", "he", "him", "his", "she", "her", "hers", "we", "us", "our", "ours", "i", "me", "my", "mine", "you", "your", "yours"]);
             words.forEach(w => {
                 const low = w.toLowerCase();
                 if (low.length < 3 || stopWords.has(low)) return;
@@ -521,41 +475,22 @@
             while ((wm = wordRegex.exec(rawText)) !== null) {
                 const stem = getStem(wm[0]);
                 if (tooFrequentStems.includes(stem) && !matchMap.has(wm.index)) {
-                    matchMap.set(wm.index, { 
-                        len: wm[0].length, 
-                        rawWord: wm[0],
-                        category: {
-                            class: 'hl-frequent',
-                            title: 'Repetition',
-                            strategy: `The word family '${wm[0]}' is used ${stemFreq[stem]} times. Fresh writing avoids repeating key words too often.`,
-                            fallbackTip: "Try using a synonym to keep your imagery fresh.",
-                            specificTips: {}
-                        }
-                    });
+                    matchMap.set(wm.index, { len: wm[0].length, rawWord: wm[0], category: { class: 'hl-frequent', title: 'Repetition', strategy: `The word family '${wm[0]}' is used ${stemFreq[stem]} times here.`, fallbackTip: "Try a synonym to keep things fresh.", specificTips: {} } });
                 }
             }
 
-            // 3. Reconstruct HTML
             let finalHTML = "";
             let lastIdx = 0;
-            const sortedIndices = Array.from(matchMap.keys()).sort((a, b) => a - b);
-            sortedIndices.forEach(idx => {
+            Array.from(matchMap.keys()).sort((a, b) => a - b).forEach(idx => {
                 if (idx < lastIdx) return;
                 const data = matchMap.get(idx);
                 finalHTML += rawText.substring(lastIdx, idx).replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
-                
                 const wordKey = data.rawWord.toLowerCase();
-                const specificTip = data.category.specificTips?.[wordKey] 
-                                    || data.category.specificTips?.[getStem(wordKey)] 
-                                    || data.category.fallbackTip 
-                                    || "";
-                
-                const tagStr = `<span class="hl ${data.category.class}" data-title="${data.category.title}" data-word="${data.rawWord}" data-strategy="${data.category.strategy}" data-example="${specificTip.replace(/\n/g, '\\n')}">${rawText.substring(idx, idx + data.len)}</span>`;
-                finalHTML += tagStr;
+                const specificTip = data.category.specificTips?.[wordKey] || data.category.specificTips?.[getStem(wordKey)] || data.category.fallbackTip || "";
+                finalHTML += `<span class="hl ${data.category.class}" data-title="${data.category.title}" data-word="${data.rawWord}" data-strategy="${data.category.strategy}" data-example="${specificTip.replace(/\n/g, '\\n')}">${rawText.substring(idx, idx + data.len)}</span>`;
                 lastIdx = idx + data.len;
             });
             finalHTML += rawText.substring(lastIdx).replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
-            
             editor.innerHTML = finalHTML.replace(/\n/g, '<br>');
 
             updateStats(words, stemFreq, familyMap, sentenceMatches, actualWeaknessCount, sensoryCount);
@@ -563,94 +498,52 @@
         }
 
         function updateStats(words, stemFreq, familyMap, sentences, weakCount, sensoryCount) {
-            const wordCount = words.length;
-            const sentenceCount = sentences.length;
-            
-            document.getElementById('stat-words').innerText = wordCount;
-            document.getElementById('sent-total').innerText = sentenceCount;
-            document.getElementById('stat-avg').innerText = wordCount > 0 ? (wordCount / sentenceCount).toFixed(1) : 0;
-
-            const percent = wordCount > 0 ? Math.round((weakCount / wordCount) * 100) : 0;
+            const wc = words.length;
+            const sc = sentences.length;
+            document.getElementById('stat-words').innerText = wc;
+            document.getElementById('sent-total').innerText = sc;
+            document.getElementById('stat-avg').innerText = wc > 0 ? (wc / sc).toFixed(1) : 0;
+            const percent = wc > 0 ? Math.round((weakCount / wc) * 100) : 0;
             document.getElementById('weak-percent').innerText = percent + "%";
             document.getElementById('percent-bar').style.width = Math.min(percent, 100) + "%";
-
-            const complexWords = words.filter(w => w.length > 7).length;
-            const level = Math.round((complexWords / wordCount) * 10 + (wordCount / sentenceCount) / 2) || 0;
-            document.getElementById('grade-level').innerText = `Est. Level: ${Math.min(level + 4, 12)}`;
+            document.getElementById('grade-level').innerText = `Est. Level: ${Math.min(Math.round((words.filter(w => w.length > 7).length / wc) * 10 + (wc / sc) / 2) + 4, 12) || 0}`;
             document.getElementById('stat-sensory').innerText = sensoryCount;
-
-            const unique = new Set(words.map(w => w.toLowerCase())).size;
-            const uniquePercent = wordCount > 0 ? Math.round((unique / wordCount) * 100) : 0;
-            document.getElementById('stat-unique').innerText = uniquePercent + "%";
-
-            const catContainer = document.getElementById('category-list');
-            catContainer.innerHTML = listsData.map(list => {
-                const count = editor.querySelectorAll(`.${list.class}`).length;
-                return `
-                    <div class="flex justify-between items-center text-[10px] font-black p-4 stat-card rounded-2xl">
-                        <span class="${list.color} uppercase tracking-tighter">${list.title}</span>
-                        <span class="opacity-30 font-bold">${count}</span>
-                    </div>
-                `;
-            }).join('');
-
-            let sCount = {short:0, medium:0, long:0};
-            sentences.forEach(s => {
-                const w = (s.match(/\b\w+\b/g) || []).length;
-                if (w <= 10) sCount.short++;
-                else if (w >= 25) sCount.long++;
-                else sCount.medium++;
-            });
-            document.getElementById('sent-short').innerText = sCount.short;
-            document.getElementById('sent-medium').innerText = sCount.medium;
-            document.getElementById('sent-long').innerText = sCount.long;
-
+            document.getElementById('stat-unique').innerText = (wc > 0 ? Math.round((new Set(words.map(w => w.toLowerCase())).size / wc) * 100) : 0) + "%";
+            document.getElementById('category-list').innerHTML = listsData.map(l => `<div class="flex justify-between items-center text-[10px] font-black p-4 stat-card rounded-2xl"><span class="${l.color} uppercase tracking-tighter">${l.title}</span><span class="opacity-30 font-bold">${editor.querySelectorAll(`.${l.class}`).length}</span></div>`).join('');
+            let rhythm = {s:0, m:0, l:0};
+            sentences.forEach(s => { const w = (s.match(/\b\w+\b/g) || []).length; if (w <= 10) rhythm.s++; else if (w >= 25) rhythm.l++; else rhythm.m++; });
+            document.getElementById('sent-short').innerText = rhythm.s;
+            document.getElementById('sent-medium').innerText = rhythm.m;
+            document.getElementById('sent-long').innerText = rhythm.l;
             const topFreq = Object.entries(stemFreq).filter(f => f[1] >= 2).sort((a,b) => b[1]-a[1]);
-            const freqContainer = document.getElementById('freq-words');
-            freqContainer.innerHTML = topFreq.length > 0 
-                ? topFreq.slice(0, 5).map(([stem, count]) => {
-                    const variants = Array.from(familyMap[stem]).join(' / ');
-                    return `
-                    <div class="flex justify-between items-center text-sm border-b border-white/20 pb-3">
-                        <div class="flex flex-col"><span class="font-medium italic">${variants}</span><span class="text-[8px] opacity-40 uppercase font-black">Family Match</span></div>
-                        <span class="text-xl font-black opacity-80">${count}x</span>
-                    </div>`;
-                }).join('')
-                : `<p class="opacity-70 text-sm italic">Clear as a bell.</p>`;
+            document.getElementById('freq-words').innerHTML = topFreq.length > 0 ? topFreq.slice(0, 5).map(([s, c]) => `<div class="flex justify-between items-center text-sm border-b border-white/20 pb-3"><div class="flex flex-col"><span class="font-medium italic">${Array.from(familyMap[s]).join(' / ')}</span><span class="text-[8px] opacity-40 uppercase font-black">Family Match</span></div><span class="text-xl font-black opacity-80">${c}x</span></div>`).join('') : `<p class="opacity-70 text-sm italic">Clear as a bell.</p>`;
         }
 
         function attachTooltipEvents() {
             document.querySelectorAll('.hl').forEach(hl => {
                 hl.addEventListener('mouseenter', (e) => {
                     if (!tipsEnabled) return;
-                    
                     tooltipTitle.innerText = hl.dataset.title;
                     tooltipWord.innerText = hl.dataset.word;
                     tooltipText.innerText = hl.dataset.strategy;
                     tooltipExample.innerText = hl.dataset.example.replace(/\\n/g, '\n');
                     tooltipExample.style.display = hl.dataset.example ? 'block' : 'none';
                     tooltip.style.display = 'block';
-                    
                     const rect = hl.getBoundingClientRect();
-                    const tooltipWidth = tooltip.offsetWidth;
-                    const tooltipHeight = tooltip.offsetHeight;
-                    
-                    let leftPos = rect.left + rect.width / 2 - tooltipWidth / 2;
-                    let topPos = rect.top + window.scrollY - tooltipHeight - 20;
-                    
-                    if (leftPos < 20) leftPos = 20;
-                    if (leftPos + tooltipWidth > window.innerWidth - 20) leftPos = window.innerWidth - tooltipWidth - 20;
-                    if (topPos < window.scrollY + 20) topPos = rect.bottom + window.scrollY + 20;
-
-                    tooltip.style.left = leftPos + 'px';
-                    tooltip.style.top = topPos + 'px';
+                    let left = rect.left + rect.width / 2 - tooltip.offsetWidth / 2;
+                    let top = rect.top + window.scrollY - tooltip.offsetHeight - 20;
+                    if (left < 20) left = 20;
+                    if (left + tooltip.offsetWidth > window.innerWidth - 20) left = window.innerWidth - tooltip.offsetWidth - 20;
+                    if (top < window.scrollY + 20) top = rect.bottom + window.scrollY + 20;
+                    tooltip.style.left = left + 'px';
+                    tooltip.style.top = top + 'px';
                 });
                 hl.addEventListener('mouseleave', () => tooltip.style.display = 'none');
             });
         }
 
         window.onload = () => {
-            editor.innerText = "The cold winter morning would be very cold as ice. He started to realize it was nice, meaning that he felt warm. He decided he heard a noise. He knew he thought he saw the dragon roar. Things were quiet as a mouse.";
+            editor.innerText = "He walked home. He sat down. He was tired. He decided to sleep. He knew he was late. (This triggers the highlight because it is 100% Noun/Verb starts).\n\nBut here is a paragraph that uses a pronoun properly. He went to the store. After a long walk, he found the bread. He felt happy.";
             analyzeText();
         }
     </script>
