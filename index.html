@@ -105,7 +105,7 @@
         .custom-scrollbar::-webkit-scrollbar-thumb { background: var(--accent); border-radius: 10px; }
     </style>
 </head>
-<body class="min-h-screen">
+<body class="min-h-screen flex flex-col">
 
     <div id="tooltip" class="p-8 rounded-3xl text-[13px] animate-in fade-in duration-200 shadow-2xl">
         <div class="flex items-center justify-between mb-4 border-b border-white/10 pb-4">
@@ -118,10 +118,11 @@
             </div>
         </div>
         <p id="tooltip-text" class="mb-6 opacity-80 leading-relaxed whitespace-pre-line"></p>
-        <div id="tooltip-example" class="space-y-3 bg-black/30 p-6 rounded-2xl border-l-4 border-amber-600 font-medium leading-relaxed whitespace-pre-line text-amber-100/90"></div>
+        <div id="tooltip-example" class="space-y-3 bg-black/30 p-5 rounded-2xl border-l-4 border-amber-600 font-medium leading-relaxed whitespace-pre-line text-amber-100/90"></div>
     </div>
 
-    <div class="flex flex-col lg:flex-row min-h-screen">
+    <div class="flex flex-col lg:flex-row flex-grow">
+        <!-- Main Workspace -->
         <main class="w-full lg:w-[60%] p-6 lg:p-10 xl:p-14">
             <header class="mb-10 flex flex-col md:flex-row justify-between items-start md:items-end gap-6">
                 <div>
@@ -153,87 +154,92 @@
             </div>
         </main>
 
-        <aside class="w-full lg:w-[40%] sidebar p-8 lg:p-10 lg:overflow-y-auto custom-scrollbar lg:max-h-screen flex flex-col">
-            <div class="flex-grow">
-                <div class="flex items-center justify-between mb-8">
-                    <h2 class="text-xs font-black uppercase tracking-[0.3em] flex items-center gap-3">
-                        <span class="h-3 w-3 rounded-full bg-amber-600 animate-pulse"></span>
-                        The Lab Report
-                    </h2>
-                    <span id="grade-level" class="px-4 py-1.5 bg-amber-600/20 text-amber-600 rounded-full text-[10px] font-black uppercase tracking-widest">Level: 0</span>
-                </div>
+        <!-- Sidebar Summary -->
+        <aside class="w-full lg:w-[40%] sidebar p-8 lg:p-10 lg:overflow-y-auto custom-scrollbar lg:max-h-screen">
+            <div class="flex items-center justify-between mb-8">
+                <h2 class="text-xs font-black uppercase tracking-[0.3em] flex items-center gap-3">
+                    <span class="h-3 w-3 rounded-full bg-amber-600 animate-pulse"></span>
+                    The Lab Report
+                </h2>
+                <span id="grade-level" class="px-4 py-1.5 bg-amber-600/20 text-amber-600 rounded-full text-[10px] font-black uppercase tracking-widest">Level: 0</span>
+            </div>
 
-                <div class="stat-card p-8 rounded-[2rem] mb-6">
-                    <div class="grid grid-cols-3 gap-2 mb-8 text-center border-b border-white/5 pb-8">
-                        <div>
-                            <p class="text-[10px] uppercase tracking-[0.1em] font-black mb-2 opacity-50 text-amber-500 leading-tight">Words</p>
-                            <p id="stat-words" class="text-3xl font-black">0</p>
-                        </div>
-                        <div>
-                            <p class="text-[10px] uppercase tracking-[0.1em] font-black mb-2 opacity-50 text-amber-500 leading-tight">Sentences</p>
-                            <p id="sent-total" class="text-3xl font-black">0</p>
-                        </div>
-                        <div>
-                            <p class="text-[10px] uppercase tracking-[0.1em] font-black mb-2 opacity-50 text-amber-500 leading-tight">Average Length</p>
-                            <p id="stat-avg" class="text-3xl font-black font-mono">0</p>
-                        </div>
+            <!-- Core Stats -->
+            <div class="stat-card p-8 rounded-[2rem] mb-6">
+                <div class="grid grid-cols-3 gap-2 mb-8 text-center border-b border-white/5 pb-8">
+                    <div>
+                        <p class="text-[10px] uppercase tracking-[0.1em] font-black mb-2 opacity-50 text-amber-500 leading-tight">Words</p>
+                        <p id="stat-words" class="text-3xl font-black">0</p>
                     </div>
-
-                    <div class="flex gap-4 text-center">
-                        <div class="flex-1 bg-white/5 p-4 rounded-2xl">
-                            <p class="text-[9px] uppercase font-black opacity-40 mb-1">Short</p>
-                            <p id="sent-short" class="text-base font-black">0</p>
-                        </div>
-                        <div class="flex-1 bg-white/5 p-4 rounded-2xl">
-                            <p class="text-[9px] uppercase font-black opacity-40 mb-1">Medium</p>
-                            <p id="sent-medium" class="text-base font-black">0</p>
-                        </div>
-                        <div class="flex-1 bg-white/5 p-4 rounded-2xl">
-                            <p class="text-[9px] uppercase font-black opacity-40 mb-1">Long</p>
-                            <p id="sent-long" class="text-base font-black">0</p>
-                        </div>
+                    <div>
+                        <p class="text-[10px] uppercase tracking-[0.1em] font-black mb-2 opacity-50 text-amber-500 leading-tight">Sentences</p>
+                        <p id="sent-total" class="text-3xl font-black">0</p>
+                    </div>
+                    <div>
+                        <p class="text-[10px] uppercase tracking-[0.1em] font-black mb-2 opacity-50 text-amber-500 leading-tight">Average Length</p>
+                        <p id="stat-avg" class="text-3xl font-black font-mono">0</p>
                     </div>
                 </div>
 
-                <div class="mb-6 bg-amber-600/5 p-8 rounded-[2rem] border-2 border-amber-600/10">
-                    <div class="flex justify-between items-end mb-4">
-                        <p class="text-xs font-black uppercase tracking-widest opacity-80">Weak Words Score</p>
-                        <p id="weak-percent" class="text-5xl font-black text-amber-600">0%</p>
+                <div class="flex gap-4 text-center">
+                    <div class="flex-1 bg-white/5 p-4 rounded-2xl">
+                        <p class="text-[9px] uppercase font-black opacity-40 mb-1">Short</p>
+                        <p id="sent-short" class="text-base font-black">0</p>
                     </div>
-                    <div class="h-4 w-full bg-black/20 rounded-full overflow-hidden">
-                        <div id="percent-bar" class="h-full bg-gradient-to-r from-amber-800 to-amber-500 transition-all duration-1000" style="width: 0%"></div>
+                    <div class="flex-1 bg-white/5 p-4 rounded-2xl">
+                        <p class="text-[9px] uppercase font-black opacity-40 mb-1">Medium</p>
+                        <p id="sent-medium" class="text-base font-black">0</p>
                     </div>
-                </div>
-
-                <div class="grid grid-cols-2 xl:grid-cols-3 gap-3 mb-6" id="category-list"></div>
-
-                <div class="grid grid-cols-2 gap-3 mb-6">
-                    <div class="stat-card p-6 rounded-3xl flex flex-col items-center border-rose-500/20 border">
-                        <p class="text-[10px] font-black uppercase tracking-widest opacity-50 mb-2">Sensory Spice</p>
-                        <p id="stat-sensory" class="text-2xl font-black text-rose-500">0</p>
-                        <p class="text-[8px] opacity-40 mt-1 uppercase text-center">Sight, Sound, Smell, etc.</p>
-                    </div>
-                    <div class="stat-card p-6 rounded-3xl flex flex-col items-center border-emerald-500/20 border">
-                        <p class="text-[10px] font-black uppercase tracking-widest opacity-50 mb-2">Unique Flavors</p>
-                        <p id="stat-unique" class="text-2xl font-black text-emerald-500">0%</p>
-                        <p class="text-[8px] opacity-40 mt-1 uppercase text-center">Vocabulary Richness</p>
-                    </div>
-                </div>
-
-                <div class="bg-amber-600 p-8 rounded-[2rem] text-white shadow-2xl shadow-amber-900/20 mb-8">
-                    <h3 class="text-xs font-black mb-5 uppercase tracking-[0.2em]">Repeated Families</h3>
-                    <div id="freq-words" class="space-y-3">
-                        <p class="opacity-60 italic text-xs">Awaiting input...</p>
+                    <div class="flex-1 bg-white/5 p-4 rounded-2xl">
+                        <p class="text-[9px] uppercase font-black opacity-40 mb-1">Long</p>
+                        <p id="sent-long" class="text-base font-black">0</p>
                     </div>
                 </div>
             </div>
 
-            <div class="mt-auto pt-8 border-t border-white/5 opacity-30 text-center">
-                <p class="text-[10px] font-black uppercase tracking-[0.5em] mb-2">Finely Crafted</p>
-                <p class="text-[9px] font-bold tracking-widest">&copy; COPYRIGHT 2026 NIC COMINO. ALL RIGHTS RESERVED.</p>
+            <!-- Weakness Meter -->
+            <div class="mb-6 bg-amber-600/5 p-8 rounded-[2rem] border-2 border-amber-600/10">
+                <div class="flex justify-between items-end mb-4">
+                    <p class="text-xs font-black uppercase tracking-widest opacity-80">Weakness Score</p>
+                    <p id="weak-percent" class="text-5xl font-black text-amber-600">0%</p>
+                </div>
+                <div class="h-4 w-full bg-black/20 rounded-full overflow-hidden">
+                    <div id="percent-bar" class="h-full bg-gradient-to-r from-amber-800 to-amber-500 transition-all duration-1000" style="width: 0%"></div>
+                </div>
+            </div>
+
+            <!-- Categories Grid -->
+            <div class="grid grid-cols-2 xl:grid-cols-3 gap-3 mb-6" id="category-list"></div>
+
+            <!-- Student Analytics -->
+            <div class="grid grid-cols-2 gap-3 mb-6">
+                <div class="stat-card p-6 rounded-3xl flex flex-col items-center border-rose-500/20 border">
+                    <p class="text-[10px] font-black uppercase tracking-widest opacity-50 mb-2">Sensory Spice</p>
+                    <p id="stat-sensory" class="text-2xl font-black text-rose-500">0</p>
+                    <p class="text-[8px] opacity-40 mt-1 uppercase text-center">Sight, Sound, Smell, etc.</p>
+                </div>
+                <div class="stat-card p-6 rounded-3xl flex flex-col items-center border-emerald-500/20 border">
+                    <p class="text-[10px] font-black uppercase tracking-widest opacity-50 mb-2">Unique Flavors</p>
+                    <p id="stat-unique" class="text-2xl font-black text-emerald-500">0%</p>
+                    <p class="text-[8px] opacity-40 mt-1 uppercase text-center">Vocabulary Richness</p>
+                </div>
+            </div>
+
+            <!-- Repeated Words -->
+            <div class="bg-amber-600 p-8 rounded-[2rem] text-white shadow-2xl shadow-amber-900/20 mb-8">
+                <h3 class="text-xs font-black mb-5 uppercase tracking-[0.2em]">Repeated Families</h3>
+                <div id="freq-words" class="space-y-3">
+                    <p class="opacity-60 italic text-xs">Awaiting input...</p>
+                </div>
             </div>
         </aside>
     </div>
+
+    <!-- App-Wide Footer -->
+    <footer class="w-full py-10 border-t border-white/5 opacity-30 text-center bg-[var(--bg-main)]">
+        <p class="text-[10px] font-black uppercase tracking-[0.6em] mb-3">Finely Crafted</p>
+        <p class="text-[9px] font-bold tracking-[0.2em]">&copy; COPYRIGHT 2026 NIC COMINO. ALL RIGHTS RESERVED.</p>
+    </footer>
 
     <script>
         let tipsEnabled = true;
