@@ -3,218 +3,220 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Caramel Latte | Dark Roast Edition</title>
+    <title>Caramel Latte | Student Prose Refiner</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=Instrument+Serif:italic&display=swap');
         
         :root {
-            --espresso-bg: #140f0d;
-            --dark-roast: #1e1815;
-            --caramel: #d97706;
-            --cream: #eaddca;
-            --steam: #3d2b24;
+            --bg-main: #140f0d;
+            --bg-editor: #1e1815;
+            --bg-sidebar: #191412;
+            --bg-card: #241c19;
+            --text-main: #eaddca;
+            --text-muted: #5c4a40;
+            --border: #2d241f;
+            --accent: #d97706;
+        }
+
+        .light-mode {
+            --bg-main: #fdfaf7;
+            --bg-editor: #ffffff;
+            --bg-sidebar: #f7f1eb;
+            --bg-card: #eee4da;
+            --text-main: #3d2b24;
+            --text-muted: #a38b7e;
+            --border: #e6ddd4;
+            --accent: #b45309;
         }
 
         body {
             font-family: 'Plus Jakarta Sans', sans-serif;
-            background-color: var(--espresso-bg);
-            color: var(--cream);
-            overflow-x: hidden;
+            background-color: var(--bg-main);
+            color: var(--text-main);
+            transition: background-color 0.3s ease, color 0.3s ease;
         }
 
         .serif { font-family: 'Instrument Serif', serif; }
 
-        /* --- Pronounced High-Contrast Highlights --- */
         .hl {
             cursor: pointer;
             transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-            padding: 1px 3px;
-            margin: 0 -1px;
-            border-radius: 4px;
+            padding: 1px 2px;
+            border-radius: 3px;
             display: inline;
-            font-weight: 700;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.3);
+            font-weight: 600;
         }
-        .hl:hover { 
-            filter: brightness(1.2); 
-            box-shadow: 0 0 12px rgba(255,255,255,0.15);
-            transform: scale(1.05);
-        }
+        .hl:hover { filter: brightness(1.1); transform: scale(1.05); }
 
-        .hl-passive { background-color: #b91c1c; color: #fee2e2; border-bottom: 2px solid #f87171; }
-        .hl-bad-start { background-color: #1d4ed8; color: #dbeafe; border-bottom: 2px solid #60a5fa; }
-        .hl-stop { background-color: #a16207; color: #fef9c3; border-bottom: 2px solid #facc15; }
-        .hl-filter { background-color: #7e22ce; color: #f3e8ff; border-bottom: 2px solid #c084fc; }
-        .hl-filler { background-color: #be185d; color: #fce7f3; border-bottom: 2px solid #f472b6; }
-        .hl-basic { background-color: #047857; color: #d1fae5; border-bottom: 2px solid #34d399; }
-        .hl-frequent { border-bottom: 3px dashed #94a3b8; color: #cbd5e1; font-weight: 600; }
+        .hl-passive { background-color: #ef4444; color: #fff; }
+        .hl-bad-start { background-color: #3b82f6; color: #fff; }
+        .hl-filter { background-color: #a855f7; color: #fff; }
+        .hl-filler { background-color: #ec4899; color: #fff; }
+        .hl-basic { background-color: #10b981; color: #fff; }
+        .hl-adverb { background-color: #f59e0b; color: #000; }
+        .hl-cliche { background-color: #64748b; color: #fff; }
+        .hl-sensory { border-bottom: 3px solid #f43f5e; color: inherit; border-radius: 0; }
+        .hl-frequent { border-bottom: 2px dashed var(--accent); color: inherit; font-weight: 700; }
+        .hl-stop { border-bottom: 2px solid #846d62; color: inherit; font-weight: normal; opacity: 0.6; }
 
-        /* --- Editor --- */
         #editor {
             outline: none;
-            min-height: 600px;
+            min-height: 500px;
             line-height: 2.2;
-            font-size: 1.15rem;
+            font-size: 1.2rem;
             white-space: pre-wrap;
             word-wrap: break-word;
-            background-color: var(--dark-roast);
-            color: #d1bfa7;
+            background-color: var(--bg-editor);
+            border: 1px solid var(--border);
+            color: var(--text-main);
         }
+        
         #editor:empty:before {
             content: attr(placeholder);
-            color: #5c4a40;
+            color: var(--text-muted);
             font-style: italic;
         }
 
-        /* --- UI Panels --- */
         .sidebar {
-            background-color: #191412;
-            border-left: 1px solid #2d241f;
+            background-color: var(--bg-sidebar);
+            border-left: 1px solid var(--border);
         }
         .stat-card {
-            background-color: #241c19;
-            border: 1px solid #362a24;
+            background-color: var(--bg-card);
+            border: 1px solid var(--border);
         }
 
         #tooltip {
             position: absolute;
             z-index: 9999;
             display: none;
-            width: 300px;
+            width: 280px;
             pointer-events: none;
-            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.8);
-            background: #241c19;
-            border: 1px solid #4a372d;
-            transform: translateY(-100%);
-            margin-top: -12px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.4);
+            background: var(--bg-card);
+            border: 1px solid var(--accent);
+            color: var(--text-main);
         }
 
-        .custom-scrollbar::-webkit-scrollbar { width: 4px; }
-        .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
-        .custom-scrollbar::-webkit-scrollbar-thumb { background: #4a372d; border-radius: 10px; }
+        .custom-scrollbar::-webkit-scrollbar { width: 6px; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: var(--accent); border-radius: 10px; }
     </style>
 </head>
-<body class="min-h-screen selection:bg-orange-500/40 selection:text-orange-100">
+<body class="min-h-screen">
 
-    <div id="tooltip" class="p-5 rounded-2xl text-sm animate-in fade-in zoom-in duration-200">
-        <p id="tooltip-title" class="font-black text-orange-500 uppercase tracking-widest text-[10px] mb-2"></p>
-        <p id="tooltip-text" class="text-stone-200 leading-relaxed mb-4"></p>
-        <div id="tooltip-example" class="p-3 bg-black/40 rounded-xl italic text-[11px] text-orange-200/70 border-l-4 border-orange-500/60"></div>
+    <div id="tooltip" class="p-5 rounded-2xl text-xs animate-in fade-in duration-200 shadow-2xl">
+        <p id="tooltip-title" class="font-black text-amber-500 uppercase tracking-widest mb-1"></p>
+        <p id="tooltip-text" class="mb-3 opacity-90 leading-relaxed"></p>
+        <div id="tooltip-example" class="p-3 bg-black/20 rounded-xl italic border-l-4 border-amber-600"></div>
     </div>
 
     <div class="flex flex-col lg:flex-row min-h-screen">
-        <!-- Main Workspace (66% Width) -->
-        <main class="w-full lg:w-[66%] p-6 lg:p-12 xl:p-16">
-            <header class="mb-12 flex flex-col md:flex-row justify-between items-start md:items-end gap-6">
-                <div class="space-y-1">
-                    <h1 class="text-6xl font-extrabold tracking-tighter text-orange-500 italic serif">Caramel Latte</h1>
-                    <div class="flex items-center gap-3">
-                        <span class="h-[1px] w-8 bg-orange-900/50"></span>
-                        <p class="text-orange-200/30 font-bold uppercase text-[9px] tracking-[0.3em]">Improving writing with Mr C, one sip at a time.</p>
-                    </div>
+        <!-- Main Workspace -->
+        <main class="w-full lg:w-[60%] p-6 lg:p-10 xl:p-14">
+            <header class="mb-10 flex flex-col md:flex-row justify-between items-start md:items-end gap-6">
+                <div>
+                    <h1 class="text-6xl font-extrabold tracking-tighter text-amber-600 italic serif">Caramel Latte</h1>
+                    <p class="text-[11px] uppercase tracking-[0.4em] opacity-40 font-black mt-2">Writing Lab for Grades 4-10</p>
                 </div>
-                <div class="flex gap-3 w-full md:w-auto">
-                    <button onclick="clearText()" class="flex-1 md:flex-none px-6 py-3 text-[11px] font-black uppercase tracking-widest text-orange-200/40 hover:text-orange-200 transition-colors">Clear</button>
-                    <button onclick="analyzeText()" class="flex-1 md:flex-none px-10 py-3 bg-orange-600 text-white font-black uppercase tracking-widest text-xs rounded-full shadow-2xl shadow-orange-900/40 hover:bg-orange-500 transition-all transform hover:-translate-y-1 active:scale-95">
-                        Brew & Analyze
+                <div class="flex items-center gap-3">
+                    <button onclick="toggleTheme()" class="p-4 rounded-2xl bg-amber-600/10 hover:bg-amber-600/20 text-amber-600 transition-all" title="Toggle Theme">
+                        <svg id="theme-icon" xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364-6.364l-.707.707M6.343 17.657l-.707.707m12.728 0l-.707-.707M6.343 6.343l-.707-.707M12 5a7 7 0 100 14 7 7 0 000-14z" />
+                        </svg>
+                    </button>
+                    <button onclick="copyToClipboard()" class="px-6 py-3 text-[11px] font-black uppercase tracking-widest border-2 border-amber-600/20 rounded-2xl hover:bg-amber-600/10">Copy</button>
+                    <button onclick="analyzeText()" class="px-10 py-4 bg-amber-600 text-white font-black uppercase tracking-widest text-xs rounded-full shadow-xl hover:bg-amber-700 transition-all transform hover:-translate-y-1 active:scale-95">
+                        Brew Analysis
                     </button>
                 </div>
             </header>
 
-            <div class="rounded-[2.5rem] shadow-2xl shadow-black/40 border border-white/5 overflow-hidden bg-[var(--dark-roast)]">
+            <div class="rounded-[2.5rem] shadow-2xl overflow-hidden border-4 border-white/5">
                 <div id="editor" contenteditable="true" spellcheck="false"
-                     class="p-10 lg:p-16 focus:ring-0 transition-all"
+                     class="p-10 lg:p-14 focus:ring-0 transition-all custom-scrollbar overflow-y-auto"
                      placeholder="Pour your draft here..."></div>
             </div>
         </main>
 
-        <!-- Sidebar Summary (34% Width) -->
-        <aside class="w-full lg:w-[34%] sidebar p-8 lg:p-10 lg:overflow-y-auto custom-scrollbar lg:max-h-screen">
+        <!-- Sidebar Summary -->
+        <aside class="w-full lg:w-[40%] sidebar p-8 lg:p-10 lg:overflow-y-auto custom-scrollbar lg:max-h-screen">
             <div class="flex items-center justify-between mb-8">
-                <h2 class="text-[11px] font-black text-orange-100 uppercase tracking-[0.25em] flex items-center gap-3">
-                    <span class="flex h-2 w-2 relative">
-                        <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-orange-400 opacity-75"></span>
-                        <span class="relative inline-flex rounded-full h-2 w-2 bg-orange-500"></span>
-                    </span>
-                    The Scorecard
+                <h2 class="text-xs font-black uppercase tracking-[0.3em] flex items-center gap-3">
+                    <span class="h-3 w-3 rounded-full bg-amber-600 animate-pulse"></span>
+                    The Lab Report
                 </h2>
-                <span id="last-update" class="text-[9px] text-orange-200/20 font-bold uppercase tracking-widest">Awaiting Input</span>
+                <span id="grade-level" class="px-4 py-1.5 bg-amber-600/20 text-amber-600 rounded-full text-[10px] font-black uppercase tracking-widest">Level: 0</span>
             </div>
 
-            <!-- Consolidated Brew Stats -->
-            <div class="stat-card p-6 rounded-[2rem] mb-4 shadow-lg shadow-black/10">
-                <div class="grid grid-cols-3 gap-4 mb-6">
-                    <div class="text-center">
-                        <p class="text-[8px] uppercase tracking-widest text-orange-500 font-black mb-1 opacity-60">Words</p>
-                        <p id="stat-words" class="text-2xl font-black text-orange-100">0</p>
+            <!-- Core Stats -->
+            <div class="stat-card p-8 rounded-[2rem] mb-6">
+                <div class="grid grid-cols-3 gap-2 mb-8 text-center border-b border-white/5 pb-8">
+                    <div>
+                        <p class="text-[10px] uppercase tracking-[0.1em] font-black mb-2 opacity-50 text-amber-500 leading-tight">Words</p>
+                        <p id="stat-words" class="text-3xl font-black">0</p>
                     </div>
-                    <div class="text-center">
-                        <p class="text-[8px] uppercase tracking-widest text-orange-500 font-black mb-1 opacity-60">Sentences</p>
-                        <p id="sent-total" class="text-2xl font-black text-orange-100">0</p>
+                    <div>
+                        <p class="text-[10px] uppercase tracking-[0.1em] font-black mb-2 opacity-50 text-amber-500 leading-tight">Sentences</p>
+                        <p id="sent-total" class="text-3xl font-black">0</p>
                     </div>
-                    <div class="text-center">
-                        <p class="text-[8px] uppercase tracking-widest text-orange-500 font-black mb-1 opacity-60">Avg. Length</p>
-                        <p id="stat-avg" class="text-2xl font-black text-orange-100 font-mono tracking-tighter">0</p>
+                    <div>
+                        <p class="text-[10px] uppercase tracking-[0.1em] font-black mb-2 opacity-50 text-amber-500 leading-tight">Average Length</p>
+                        <p id="stat-avg" class="text-3xl font-black font-mono">0</p>
                     </div>
                 </div>
 
-                <!-- Horizontal Sentence Rhythm -->
-                <div class="flex gap-2 justify-between">
-                    <div class="flex-1 bg-black/30 p-2 rounded-xl border border-white/5 text-center">
-                        <p class="text-[7px] uppercase font-bold text-orange-200/30 tracking-widest mb-1">Short</p>
-                        <p id="sent-short" class="text-xs font-black text-orange-100">0</p>
+                <div class="flex gap-4 text-center">
+                    <div class="flex-1 bg-white/5 p-4 rounded-2xl">
+                        <p class="text-[9px] uppercase font-black opacity-40 mb-1">Short</p>
+                        <p id="sent-short" class="text-base font-black">0</p>
                     </div>
-                    <div class="flex-1 bg-black/30 p-2 rounded-xl border border-white/5 text-center">
-                        <p class="text-[7px] uppercase font-bold text-orange-200/30 tracking-widest mb-1">Medium</p>
-                        <p id="sent-medium" class="text-xs font-black text-orange-100">0</p>
+                    <div class="flex-1 bg-white/5 p-4 rounded-2xl">
+                        <p class="text-[9px] uppercase font-black opacity-40 mb-1">Medium</p>
+                        <p id="sent-medium" class="text-base font-black">0</p>
                     </div>
-                    <div class="flex-1 bg-black/30 p-2 rounded-xl border border-white/5 text-center">
-                        <p class="text-[7px] uppercase font-bold text-orange-200/30 tracking-widest mb-1">Long</p>
-                        <p id="sent-long" class="text-xs font-black text-orange-100">0</p>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Density Meter & Grade Targets -->
-            <div class="mb-4 bg-white/5 p-6 rounded-[2rem] border border-white/5">
-                <div class="flex justify-between items-end mb-3">
-                    <p class="text-[9px] font-black text-orange-100 uppercase tracking-widest opacity-60">Weakness Density</p>
-                    <p id="weak-percent" class="text-4xl font-black text-orange-500">0%</p>
-                </div>
-                <div class="h-2.5 w-full bg-black/40 rounded-full overflow-hidden">
-                    <div id="percent-bar" class="h-full bg-gradient-to-r from-orange-900 to-orange-500 rounded-full transition-all duration-1000 ease-out" style="width: 0%"></div>
-                </div>
-                <div class="grid grid-cols-3 gap-2 mt-4 pt-4 border-t border-white/5">
-                    <div class="text-[8px] flex flex-col items-center p-2 rounded-xl bg-black/20">
-                        <span class="text-orange-200/40 uppercase tracking-tighter mb-1">Senior</span>
-                        <span class="text-orange-100 font-bold">&lt; 28%</span>
-                    </div>
-                    <div class="text-[8px] flex flex-col items-center p-2 rounded-xl bg-black/20">
-                        <span class="text-orange-200/40 uppercase tracking-tighter mb-1">Middle</span>
-                        <span class="text-orange-100 font-bold">&lt; 38%</span>
-                    </div>
-                    <div class="text-[8px] flex flex-col items-center p-2 rounded-xl bg-black/20">
-                        <span class="text-orange-200/40 uppercase tracking-tighter mb-1">Junior</span>
-                        <span class="text-orange-100 font-bold">&lt; 48%</span>
+                    <div class="flex-1 bg-white/5 p-4 rounded-2xl">
+                        <p class="text-[9px] uppercase font-black opacity-40 mb-1">Long</p>
+                        <p id="sent-long" class="text-base font-black">0</p>
                     </div>
                 </div>
             </div>
 
-            <!-- Categories -->
-            <div class="grid grid-cols-2 gap-2 mb-4" id="category-list"></div>
-
-            <!-- Frequent Words -->
-            <div class="bg-gradient-to-br from-orange-600 to-orange-700 p-6 rounded-[2rem] shadow-2xl shadow-orange-950/40 text-orange-950">
-                <h3 class="text-[9px] font-black mb-4 uppercase tracking-[0.2em]">Repeated Flavors</h3>
-                <div id="freq-words" class="space-y-2">
-                    <p class="opacity-40 italic text-[10px]">No repetitions detected.</p>
+            <!-- Weakness Meter -->
+            <div class="mb-6 bg-amber-600/5 p-8 rounded-[2rem] border-2 border-amber-600/10">
+                <div class="flex justify-between items-end mb-4">
+                    <p class="text-xs font-black uppercase tracking-widest opacity-80">Polished Prose Score</p>
+                    <p id="weak-percent" class="text-5xl font-black text-amber-600">0%</p>
+                </div>
+                <div class="h-4 w-full bg-black/20 rounded-full overflow-hidden">
+                    <div id="percent-bar" class="h-full bg-gradient-to-r from-amber-800 to-amber-500 transition-all duration-1000" style="width: 0%"></div>
                 </div>
             </div>
-            
-            <p class="mt-8 text-[9px] text-center text-orange-200/10 font-bold uppercase tracking-[0.4em] italic leading-relaxed">
-                Refining prose, one sip at a time.
-            </p>
+
+            <!-- Categories Grid -->
+            <div class="grid grid-cols-2 xl:grid-cols-3 gap-3 mb-6" id="category-list"></div>
+
+            <!-- Student Analytics -->
+            <div class="grid grid-cols-2 gap-3 mb-6">
+                <div class="stat-card p-6 rounded-3xl flex flex-col items-center">
+                    <p class="text-[10px] font-black uppercase tracking-widest opacity-50 mb-2">Sensory Spice</p>
+                    <p id="stat-sensory" class="text-2xl font-black text-rose-500">0</p>
+                    <p class="text-[8px] opacity-40 mt-1 uppercase text-center">Sight, Sound, etc.</p>
+                </div>
+                <div class="stat-card p-6 rounded-3xl flex flex-col items-center">
+                    <p class="text-[10px] font-black uppercase tracking-widest opacity-50 mb-2">Unique Flavors</p>
+                    <p id="stat-unique" class="text-2xl font-black text-emerald-500">0%</p>
+                    <p class="text-[8px] opacity-40 mt-1 uppercase text-center">Vocabulary Richness</p>
+                </div>
+            </div>
+
+            <!-- Repeated Words -->
+            <div class="bg-amber-600 p-8 rounded-[2rem] text-white shadow-2xl shadow-amber-900/20">
+                <h3 class="text-xs font-black mb-5 uppercase tracking-[0.2em]">Repeated Families</h3>
+                <div id="freq-words" class="space-y-3">
+                    <p class="opacity-60 italic text-xs">Awaiting input...</p>
+                </div>
+            </div>
         </aside>
     </div>
 
@@ -222,57 +224,83 @@
         const listsData = [
             {
                 id: 'badstart',
-                title: "Bad Start",
+                title: "Weak Start",
                 class: "hl-bad-start",
-                color: "text-blue-400",
+                color: "text-blue-500",
+                isWeakness: true,
                 words: ["The", "It", "A", "An", "He", "She", "His", "Here", "This", "These", "Those", "They", "There", "Then", "I", "My", "We", "Our"],
-                strategy: "Sentence leads with a generic subject. Start with a concrete noun for immediate impact.",
-                example: "Weak: 'It is a cold day.' -> Strong: 'Ice coated the windshield.'"
+                strategy: "Starts with a generic subject. Try starting with a concrete noun.",
+                example: "It is sunny -> Sunbeams scorched the pavement."
             },
             {
                 id: 'passive',
                 title: "Passive",
                 class: "hl-passive",
-                color: "text-red-400",
+                color: "text-red-500",
+                isWeakness: true,
                 words: ["am", "is", "are", "was", "were", "be", "being", "been", "have", "has", "had", "do", "does", "did", "get", "got", "getting", "gotten"],
-                strategy: "Passive construction distances the action. Swap for a vivid active verb.",
-                example: "Weak: 'The ball was thrown.' -> Strong: 'She threw the ball.'"
+                strategy: "Weak 'to-be' verb. Swap for a vivid active verb.",
+                example: "She was running -> She sprinted."
             },
             {
                 id: 'filter',
-                title: "Filter",
+                title: "Filters",
                 class: "hl-filter",
-                color: "text-purple-400",
-                words: ["think", "thought", "believe", "believed", "feel", "felt", "realize", "realized", "notice", "noticed", "decide", "decided", "know", "knew", "understand", "understood", "see", "saw", "look", "looked", "wonder", "wondered", "seem", "seemed", "hear", "heard"],
-                strategy: "Filter words distance the reader from the experience. Delete the filter to submerge the reader in the scene.",
-                example: "Weak: 'I saw the bird fly.' -> Strong: 'The bird flew.'"
+                color: "text-purple-500",
+                isWeakness: true,
+                words: ["think", "thought", "believe", "feel", "felt", "notice", "noticed", "decide", "know", "knew", "see", "saw", "look", "looked", "wonder", "seem", "seemed", "hear", "heard"],
+                strategy: "Filter words distance the reader. Delete the filter to submerge the reader in the scene.",
+                example: "I saw the bird fly -> The bird flew."
             },
             {
                 id: 'filler',
-                title: "Filler",
+                title: "Fillers",
                 class: "hl-filler",
-                color: "text-pink-400",
+                color: "text-pink-500",
+                isWeakness: true,
                 words: ["very", "really", "just", "quite", "too", "actually", "basically", "totally", "definitely", "literally", "simply", "truly", "extremely", "somewhat", "rather", "pretty", "highly"],
-                strategy: "Intensifiers are 'empty' modifiers. Remove them entirely or find a more powerful root word.",
-                example: "Weak: 'It was very hot.' -> Strong: 'It was sweltering.'"
+                strategy: "Empty modifiers. Remove or find a stronger root word.",
+                example: "Very cold -> Freezing."
+            },
+            {
+                id: 'adverb',
+                title: "Adverbs",
+                class: "hl-adverb",
+                color: "text-amber-500",
+                isWeakness: true,
+                regex: /\b\w+ly\b/gi,
+                strategy: "Adverbs often hide weak verbs. Find a stronger verb instead.",
+                example: "Ran quickly -> Sprinted."
+            },
+            {
+                id: 'cliche',
+                title: "Clichés",
+                class: "hl-cliche",
+                color: "text-slate-500",
+                isWeakness: true,
+                words: ["cold as ice", "white as a sheet", "quiet as a mouse", "at the end of the day", "avoid like the plague", "piece of cake", "break the ice", "light as a feather", "red as a beet"],
+                strategy: "Overused phrase. Try to come up with your own unique comparison.",
+                example: "Cold as ice -> Cold as a tombstone in January."
+            },
+            {
+                id: 'sensory',
+                title: "Sensory",
+                class: "hl-sensory",
+                color: "text-rose-500",
+                isWeakness: false,
+                words: ["glistened", "shimmered", "roared", "thundered", "stale", "sweet", "rough", "velvety", "glared", "shadowy", "scented", "bitter", "crumbled"],
+                strategy: "Great sensory word! This helps with 'Showing, Not Telling.'",
+                example: "Keep using vivid words that appeal to the five senses."
             },
             {
                 id: 'basic',
-                title: "Basic",
+                title: "Basic Word",
                 class: "hl-basic",
-                color: "text-green-400",
-                words: ["nice", "good", "bad", "big", "small", "fun", "stuff", "thing", "things", "walk", "run", "went", "came", "say", "said", "go", "make", "take", "find", "scared", "happy", "sad"],
-                strategy: "Generic vocabulary lacks sensory flavor. Upgrade to precise, evocative terminology.",
-                example: "Weak: 'It was a nice car.' -> Strong: 'The vintage Jaguar gleamed.'"
-            },
-            {
-                id: 'stop',
-                title: "Stop Word",
-                class: "hl-stop",
-                color: "text-yellow-400",
-                words: ["a", "an", "the", "i", "me", "my", "mine", "myself", "you", "your", "yours", "yourself", "yourselves", "he", "him", "his", "himself", "she", "her", "hers", "herself", "it", "its", "itself", "we", "us", "our", "ours", "ourselves", "they", "them", "their", "theirs", "themselves", "this", "that", "these", "those", "can", "could", "will", "would", "shall", "should", "may", "might", "must", "and", "but", "or", "nor", "so", "yet", "for", "because", "if", "although", "though", "since", "of", "in", "on", "at", "by", "with", "from", "to", "into", "onto", "over", "under", "through", "without", "within", "about", "against", "among", "also", "even", "still", "only", "always", "never", "often", "sometimes", "usually", "further", "more", "most", "some", "any", "all", "each", "every", "either", "neither", "both", "much", "many", "few", "little", "own", "same", "other", "another", "such", "as", "than", "like"],
-                strategy: "Functional words. High density suggests 'clunky' sentence structures.",
-                example: "Try merging or re-ordering sentences to eliminate excessive connectors."
+                color: "text-emerald-500",
+                isWeakness: true,
+                words: ["nice", "good", "bad", "big", "small", "fun", "stuff", "thing", "walk", "run", "went", "came", "say", "said", "go", "make", "take", "find"],
+                strategy: "Common word. Upgrade to more precise, specific terminology.",
+                example: "A big tree -> A towering oak."
             }
         ];
 
@@ -282,201 +310,217 @@
         const tooltipText = document.getElementById('tooltip-text');
         const tooltipExample = document.getElementById('tooltip-example');
 
-        function clearText() {
-            editor.innerHTML = "";
-            analyzeText();
+        function toggleTheme() {
+            document.body.classList.toggle('light-mode');
         }
 
-        function getPlainText(el) {
-            return el.innerText || "";
+        function copyToClipboard() {
+            const el = document.createElement('textarea');
+            el.value = editor.innerText;
+            document.body.appendChild(el);
+            el.select();
+            document.execCommand('copy');
+            document.body.removeChild(el);
         }
 
-        function escapeHTML(str) {
-            return str.replace(/[&<>"']/g, m => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[m]));
-        }
-
-        function escapeRegExp(string) {
-            return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+        function getStem(word) {
+            return word.toLowerCase()
+                .replace(/(ing|ed|es|ly|s)$/, '')
+                .replace(/([aeiou])\1$/, '$1'); 
         }
 
         function analyzeText() {
-            const rawText = getPlainText(editor);
-            if (!rawText.trim()) {
-                updateStats(0, 0, 0, [], {short: 0, medium: 0, long: 0, total: 0});
-                return;
-            }
+            const rawText = editor.innerText || "";
+            if (!rawText.trim()) return;
 
             const words = rawText.match(/\b\w+\b/g) || [];
             const wordCount = words.length;
-            
             const sentenceMatches = rawText.match(/[^.?!]+[.?!]+/g) || [rawText];
-            const sentenceVariety = {short: 0, medium: 0, long: 0, total: sentenceMatches.length};
-            sentenceMatches.forEach(s => {
-                const wCount = (s.match(/\b\w+\b/g) || []).length;
-                if (wCount <= 10) sentenceVariety.short++;
-                else if (wCount >= 25) sentenceVariety.long++;
-                else sentenceVariety.medium++;
-            });
-
-            const matchMap = new Map();
-
-            // 1. Bad Starts
-            const badStartList = listsData.find(l => l.id === 'badstart');
-            const badStartRegex = new RegExp(`(^|[.?!]\\s+)(${badStartList.words.join('|')})\\b`, 'gi');
-            let m;
-            while ((m = badStartRegex.exec(rawText)) !== null) {
-                const index = m.index + m[1].length;
-                matchMap.set(index, { len: m[2].length, category: badStartList });
-            }
-
-            // 2. Specific Weakness Lists
-            const specifics = listsData.filter(l => !['badstart', 'stop'].includes(l.id));
-            specifics.forEach(list => {
-                const regex = new RegExp(`\\b(${list.words.map(escapeRegExp).join('|')})\\b`, 'gi');
-                while ((m = regex.exec(rawText)) !== null) {
-                    if (!matchMap.has(m.index)) {
-                        matchMap.set(m.index, { len: m[0].length, category: list });
-                    }
-                }
-            });
-
-            // 3. Stop Words
-            const stopList = listsData.find(l => l.id === 'stop');
-            const stopRegex = new RegExp(`\\b(${stopList.words.map(escapeRegExp).join('|')})\\b`, 'gi');
-            while ((m = stopRegex.exec(rawText)) !== null) {
-                if (!matchMap.has(m.index)) {
-                    matchMap.set(m.index, { len: m[0].length, category: stopList });
-                }
-            }
-
-            // 4. Frequency Analysis (Check for 2 or more repetitions of significant words)
-            const freqMap = {};
-            const stopSet = new Set(stopList.words.map(w => w.toLowerCase()));
             
-            words.forEach((w) => {
-                const low = w.toLowerCase();
-                // Flag if word is not a stop word and is significant (length > 3)
-                if (low.length > 3 && !stopSet.has(low)) {
-                    freqMap[low] = (freqMap[low] || 0) + 1;
+            const matchMap = new Map();
+            let actualWeaknessCount = 0;
+            let sensoryCount = 0;
+
+            // 1. Analyze Fixed Lists
+            listsData.forEach(list => {
+                let regex;
+                if (list.id === 'badstart') {
+                    regex = new RegExp(`(^|[.?!]\\s+)(${list.words.join('|')})\\b`, 'gi');
+                } else if (list.regex) {
+                    regex = list.regex;
+                } else {
+                    const sortedWords = [...list.words].sort((a,b) => b.length - a.length);
+                    regex = new RegExp(`\\b(${sortedWords.join('|')})\\b`, 'gi');
                 }
-            });
 
-            // Filter for words occurring 2 or more times
-            const topFreq = Object.entries(freqMap)
-                .filter(([_, count]) => count >= 2)
-                .sort((a, b) => b[1] - a[1]);
-
-            topFreq.forEach(([word]) => {
-                const regex = new RegExp(`\\b${escapeRegExp(word)}\\b`, 'gi');
+                let m;
                 while ((m = regex.exec(rawText)) !== null) {
-                    if (!matchMap.has(m.index)) {
-                        matchMap.set(m.index, { 
-                            len: m[0].length, 
-                            category: { 
-                                class: 'hl-frequent', 
-                                title: 'Repeated Word', 
-                                strategy: 'This word appears multiple times. Consider using a synonym to vary your flavor.', 
-                                example: '' 
-                            } 
-                        });
+                    let index = m.index;
+                    let text = m[0];
+                    if (list.id === 'badstart') {
+                        index += m[1].length;
+                        text = m[2];
+                    }
+                    if (!matchMap.has(index)) {
+                        matchMap.set(index, { len: text.length, category: list });
+                        if (list.isWeakness) actualWeaknessCount++;
+                        if (list.id === 'sensory') sensoryCount++;
                     }
                 }
             });
 
-            // 5. Reconstruction
+            // 2. Enhanced Repetition Analysis (Exclude Auxiliary/Functional Words)
+            const stopWords = new Set([
+                "a", "an", "the", "and", "but", "or", "so", "if", "of", "in", "on", "at", "by", "with", "from", "to",
+                "is", "was", "were", "are", "be", "been", "being", "have", "has", "had", "do", "does", "did",
+                "will", "would", "shall", "should", "can", "could", "may", "might", "must",
+                "it", "its", "they", "them", "their", "this", "that", "these", "those",
+                "he", "him", "his", "she", "her", "hers", "we", "us", "our", "ours", "i", "me", "my", "mine", "you", "your", "yours",
+                "who", "whom", "whose", "which", "what", "where", "when", "why", "how",
+                "all", "any", "both", "each", "few", "more", "most", "other", "some", "such", "no", "nor", "not", "only", "own", "same", "than", "too", "very", "just", "now"
+            ]);
+
+            const stemFreq = {};
+            const familyMap = {}; 
+
+            words.forEach(w => {
+                const low = w.toLowerCase();
+                if (low.length < 3 || stopWords.has(low)) return;
+                const stem = getStem(low);
+                stemFreq[stem] = (stemFreq[stem] || 0) + 1;
+                if (!familyMap[stem]) familyMap[stem] = new Set();
+                familyMap[stem].add(low);
+            });
+
+            const tooFrequentStems = Object.keys(stemFreq).filter(s => stemFreq[s] >= 3 || (s.length > 4 && stemFreq[s] >= 2));
+
+            const wordRegex = /\b\w+\b/gi;
+            let wm;
+            while ((wm = wordRegex.exec(rawText)) !== null) {
+                const stem = getStem(wm[0]);
+                if (tooFrequentStems.includes(stem) && !matchMap.has(wm.index)) {
+                    matchMap.set(wm.index, { 
+                        len: wm[0].length, 
+                        category: {
+                            class: 'hl-frequent',
+                            title: 'Repetition',
+                            strategy: `The key word family '${wm[0]}' is used ${stemFreq[stem]} times here.`,
+                            example: 'Try using a synonym to keep the imagery fresh.'
+                        }
+                    });
+                }
+            }
+
+            // 3. Reconstruct HTML
             let finalHTML = "";
             let lastIdx = 0;
             const sortedIndices = Array.from(matchMap.keys()).sort((a, b) => a - b);
-            
             sortedIndices.forEach(idx => {
                 if (idx < lastIdx) return;
                 const data = matchMap.get(idx);
-                finalHTML += escapeHTML(rawText.substring(lastIdx, idx));
-                const tag = `<span class="hl ${data.category.class}" data-title="${escapeHTML(data.category.title)}" data-strategy="${escapeHTML(data.category.strategy)}" data-example="${escapeHTML(data.category.example || '')}">`;
-                finalHTML += tag + escapeHTML(rawText.substring(idx, idx + data.len)) + `</span>`;
+                finalHTML += rawText.substring(lastIdx, idx).replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
+                finalHTML += `<span class="hl ${data.category.class}" data-title="${data.category.title}" data-strategy="${data.category.strategy}" data-example="${data.category.example || ''}">${rawText.substring(idx, idx + data.len)}</span>`;
                 lastIdx = idx + data.len;
             });
-            finalHTML += escapeHTML(rawText.substring(lastIdx));
-
+            finalHTML += rawText.substring(lastIdx).replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
             editor.innerHTML = finalHTML.replace(/\n/g, '<br>');
-            
-            updateStats(wordCount, sortedIndices.length, sentenceMatches.length, topFreq, sentenceVariety);
+
+            updateStats(words, stemFreq, familyMap, sentenceMatches, actualWeaknessCount, sensoryCount);
             attachTooltipEvents();
-            document.getElementById('last-update').textContent = "Brewed at " + new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
         }
 
-        function updateStats(wordCount, weakCount, sentenceCount, topFreq, sentVariety) {
-            document.getElementById('stat-words').textContent = wordCount;
-            document.getElementById('sent-total').textContent = sentVariety.total;
-            document.getElementById('stat-avg').textContent = wordCount > 0 ? (wordCount / sentenceCount).toFixed(1) : 0;
+        function updateStats(words, stemFreq, familyMap, sentences, weakCount, sensoryCount) {
+            const wordCount = words.length;
+            const sentenceCount = sentences.length;
             
-            document.getElementById('sent-short').textContent = sentVariety.short;
-            document.getElementById('sent-medium').textContent = sentVariety.medium;
-            document.getElementById('sent-long').textContent = sentVariety.long;
+            document.getElementById('stat-words').innerText = wordCount;
+            document.getElementById('sent-total').innerText = sentenceCount;
+            document.getElementById('stat-avg').innerText = wordCount > 0 ? (wordCount / sentenceCount).toFixed(1) : 0;
 
             const percent = wordCount > 0 ? Math.round((weakCount / wordCount) * 100) : 0;
-            document.getElementById('weak-percent').textContent = percent + "%";
+            document.getElementById('weak-percent').innerText = percent + "%";
             document.getElementById('percent-bar').style.width = Math.min(percent, 100) + "%";
+
+            const complexWords = words.filter(w => w.length > 7).length;
+            const level = Math.round((complexWords / wordCount) * 10 + (wordCount / sentenceCount) / 2) || 0;
+            document.getElementById('grade-level').innerText = `Est. Level: ${Math.min(level + 4, 12)}`;
+
+            document.getElementById('stat-sensory').innerText = sensoryCount;
+
+            const unique = new Set(words.map(w => w.toLowerCase())).size;
+            const uniquePercent = wordCount > 0 ? Math.round((unique / wordCount) * 100) : 0;
+            document.getElementById('stat-unique').innerText = uniquePercent + "%";
 
             const catContainer = document.getElementById('category-list');
             catContainer.innerHTML = listsData.map(list => {
                 const count = editor.querySelectorAll(`.${list.class}`).length;
                 return `
-                    <div class="flex justify-between items-center text-[9px] font-black p-3 px-4 stat-card rounded-xl">
-                        <span class="${list.color} uppercase tracking-widest">${list.title}</span>
-                        <span class="text-orange-100/30 font-bold">${count}</span>
+                    <div class="flex justify-between items-center text-[10px] font-black p-4 stat-card rounded-2xl">
+                        <span class="${list.color} uppercase tracking-tighter">${list.title}</span>
+                        <span class="opacity-30 font-bold">${count}</span>
                     </div>
                 `;
             }).join('');
 
+            let sCount = {short:0, medium:0, long:0};
+            sentences.forEach(s => {
+                const w = (s.match(/\b\w+\b/g) || []).length;
+                if (w <= 10) sCount.short++;
+                else if (w >= 25) sCount.long++;
+                else sCount.medium++;
+            });
+            document.getElementById('sent-short').innerText = sCount.short;
+            document.getElementById('sent-medium').innerText = sCount.medium;
+            document.getElementById('sent-long').innerText = sCount.long;
+
+            const topFreq = Object.entries(stemFreq)
+                .filter(f => f[1] >= 2)
+                .sort((a,b) => b[1]-a[1]);
+
             const freqContainer = document.getElementById('freq-words');
-            if (topFreq.length > 0) {
-                freqContainer.innerHTML = topFreq.slice(0, 10).map(([word, count]) => `
-                    <div class="flex justify-between text-[10px] border-b border-black/10 pb-1.5 font-bold">
-                        <span class="italic font-medium">${word}</span>
-                        <span class="opacity-60">${count}x</span>
-                    </div>
-                `).join('');
-            } else {
-                freqContainer.innerHTML = `<p class="opacity-30 italic text-[10px]">No repetitions detected.</p>`;
-            }
+            freqContainer.innerHTML = topFreq.length > 0 
+                ? topFreq.slice(0, 5).map(([stem, count]) => {
+                    const variants = Array.from(familyMap[stem]).join(' / ');
+                    return `
+                    <div class="flex justify-between items-center text-sm border-b border-white/20 pb-3">
+                        <div class="flex flex-col">
+                            <span class="font-medium italic">${variants}</span>
+                            <span class="text-[8px] opacity-40 uppercase font-black">Family Match</span>
+                        </div>
+                        <span class="text-xl font-black opacity-80">${count}x</span>
+                    </div>`;
+                }).join('')
+                : `<p class="opacity-70 text-sm italic">Clear as a bell.</p>`;
         }
 
         function attachTooltipEvents() {
-            const hls = document.querySelectorAll('.hl');
-            hls.forEach(hl => {
+            document.querySelectorAll('.hl').forEach(hl => {
                 hl.addEventListener('mouseenter', (e) => {
-                    const rect = hl.getBoundingClientRect();
-                    tooltipTitle.innerText = hl.getAttribute('data-title');
-                    tooltipText.innerText = hl.getAttribute('data-strategy');
-                    const example = hl.getAttribute('data-example');
-                    tooltipExample.innerText = example || "";
-                    tooltipExample.style.display = example ? 'block' : 'none';
-                    
+                    tooltipTitle.innerText = hl.dataset.title;
+                    tooltipText.innerText = hl.dataset.strategy;
+                    tooltipExample.innerText = hl.dataset.example;
+                    tooltipExample.style.display = hl.dataset.example ? 'block' : 'none';
                     tooltip.style.display = 'block';
-                    
+                    const rect = hl.getBoundingClientRect();
                     const tooltipWidth = tooltip.offsetWidth;
-                    const viewportWidth = window.innerWidth;
-                    const padding = 20;
-                    let leftPos = rect.left + rect.width / 2;
-                    const halfWidth = tooltipWidth / 2;
+                    let leftPos = rect.left + rect.width / 2 - tooltipWidth / 2;
+                    let topPos = rect.top + window.scrollY - tooltip.offsetHeight - 15;
                     
-                    if (leftPos - halfWidth < padding) leftPos = halfWidth + padding;
-                    else if (leftPos + halfWidth > viewportWidth - padding) leftPos = viewportWidth - halfWidth - padding;
-                    
-                    tooltip.style.top = (window.scrollY + rect.top) + 'px';
+                    if (leftPos < 10) leftPos = 10;
+                    if (leftPos + tooltipWidth > window.innerWidth - 10) leftPos = window.innerWidth - tooltipWidth - 10;
+                    if (topPos < window.scrollY + 10) topPos = rect.top + window.scrollY + rect.height + 15;
+
                     tooltip.style.left = leftPos + 'px';
+                    tooltip.style.top = topPos + 'px';
                 });
-                hl.addEventListener('mouseleave', () => {
-                    tooltip.style.display = 'none';
-                });
+                hl.addEventListener('mouseleave', () => tooltip.style.display = 'none');
             });
         }
 
         window.onload = () => {
-            editor.innerHTML = "Surfing peacefully through bumpy waves, Alinas tricks are insane. She launched into a spinning ariel, board on the edge of snapping, but lands safely. Turning corners like never seen before and completing double and tripe flips. Alina is knew extremely happy and proud. ‘Slosh’ ‘Slosh’ waves crashing but there was something else. Ears notice something far in the distant, moving closer. An unfamiliar sound. She whips her head to the left. Heart pounding, legs shaking something dark, grey, big moving towards her, with a fin. Liliana, her best friend got attacked by a shark and had to get 7 stitches. Since then her friend had never surfed again and warned many of the dangers of the sea. Alina was shooken, confused, afraid and stuck not knowing what to do next....";
+            editor.innerText = "His leg was bruising. He looked at the purple bruise and started crying. The bruising was painful. He walked home. He was walking. Walking felt bad.";
             analyzeText();
-        };
+        }
     </script>
 </body>
 </html>
