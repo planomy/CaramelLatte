@@ -544,7 +544,19 @@
             document.getElementById('sent-medium').innerText = rhythm.m;
             document.getElementById('sent-long').innerText = rhythm.l;
             
-            const gl = wc > 0 ? Math.min(Math.round((words.filter(w => w.length > 7).length / wc) * 10 + (wc / totalSents) / 2) + 4, 12) : 0;
+            // Recalibrated Grade Level using Automated Readability Index (ARI) logic
+            let gl = 0;
+            if (wc > 0 && totalSents > 0) {
+                const chars = words.join('').length;
+                const charsPerWord = chars / wc;
+                // Cap words per sentence at 20 to prevent run-on sentences from artificially inflating the grade level
+                const wordsPerSentence = Math.min((wc / totalSents), 20); 
+                
+                // Standard ARI formula
+                let rawGrade = 4.71 * charsPerWord + 0.5 * wordsPerSentence - 21.43;
+                
+                gl = Math.max(1, Math.min(12, Math.round(rawGrade)));
+            }
             document.getElementById('grade-level').innerText = `Level: ${gl}`;
         }
 
