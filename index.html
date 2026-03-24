@@ -18,6 +18,7 @@
             --border: #2d241f;
             --accent: #d97706;
             --analytical-accent: #6366f1;
+            --persuasive-accent: #f43f5e;
         }
 
         .light-mode {
@@ -61,7 +62,7 @@
         .hl-subjective { background-color: #ef4444; color: #fff; }
         .hl-contraction { background-color: #f59e0b; color: #000; }
         .hl-modal { background-color: #06b6d4; color: #fff; }
-        .hl-sensory { border-bottom: 3px solid #f43f5e; color: inherit; border-radius: 0; }
+        .hl-sensory { border-bottom: 3px solid var(--persuasive-accent); color: inherit; border-radius: 0; }
         .hl-frequent { border-bottom: 2px dashed var(--accent); color: inherit; font-weight: 700; }
         .hl-stop { border-bottom: 2px solid #846d62; color: inherit; font-weight: normal; opacity: 0.6; }
 
@@ -219,23 +220,25 @@
                 </div>
             </div>
 
+            <!-- Categories -->
             <div class="grid grid-cols-2 xl:grid-cols-3 gap-3 mb-6" id="category-list"></div>
 
             <div class="grid grid-cols-2 gap-3 mb-6">
-                <!-- Sensory / Logic Stat -->
-                <div id="dynamic-stat-card" class="hl stat-card p-6 rounded-3xl flex flex-col items-center border-rose-500/20 border" data-title="Stat Guide" data-word="Metric" data-strategy="This tracks your use of specific stylistic devices." data-example="Loading...">
+                <!-- Sensory / Logic / Impact Stat -->
+                <div id="dynamic-stat-card" class="hl stat-card p-6 rounded-3xl flex flex-col items-center border-rose-500/20 border" data-title="Stat Guide" data-word="Metric" data-strategy="Tracks specific stylistic devices." data-example="Loading...">
                     <p id="dynamic-stat-label" class="text-[10px] font-black uppercase tracking-widest opacity-50 mb-2">Sensory Spice</p>
                     <p id="stat-dynamic" class="text-2xl font-black text-rose-500">0</p>
-                    <p id="dynamic-stat-sub" class="text-[8px] opacity-40 mt-1 uppercase text-center">Sight, Sound, Smell, etc.</p>
+                    <p id="dynamic-stat-sub" class="text-[8px] opacity-40 mt-1 uppercase text-center text-center">Sight, Sound, Smell, etc.</p>
                 </div>
                 <!-- Unique Flavors Stat -->
-                <div id="unique-flavor-card" class="hl stat-card p-6 rounded-3xl flex flex-col items-center border-emerald-500/20 border" data-title="Vocal Richness" data-word="Flavor" data-strategy="High uniqueness means you are using a varied, professional vocabulary." data-example="Narrative: Use specific nouns (Oak instead of Tree).\nAnalytical: Use nominalization (Discovery instead of Discover).">
+                <div id="unique-flavor-card" class="hl stat-card p-6 rounded-3xl flex flex-col items-center border-emerald-500/20 border" data-title="Vocal Richness" data-word="Flavor" data-strategy="High uniqueness indicates a mature, professional vocabulary." data-example="Advice Loading...">
                     <p class="text-[10px] font-black uppercase tracking-widest opacity-50 mb-2">Unique Flavors</p>
                     <p id="stat-unique" class="text-2xl font-black text-emerald-500">0%</p>
                     <p class="text-[8px] opacity-40 mt-1 uppercase text-center">Rich Vocabulary</p>
                 </div>
             </div>
 
+            <!-- Repeated Words -->
             <div class="bg-amber-600 p-8 rounded-[2rem] text-white shadow-2xl shadow-amber-900/20 mb-8">
                 <h3 class="text-xs font-black mb-5 uppercase tracking-[0.2em]">Repeated Families</h3>
                 <div id="freq-words" class="space-y-3">
@@ -252,7 +255,7 @@
 
     <script>
         let tipsEnabled = true;
-        let currentMode = 'narrative'; // 'narrative' or 'analytical'
+        let currentMode = 'narrative'; // cycles: narrative -> analytical -> persuasive
 
         const baseLists = [
             {
@@ -262,13 +265,12 @@
                 color: "text-blue-500",
                 isWeakness: true,
                 words: ["The", "It", "A", "An", "He", "She", "His", "Her", "This", "These", "Those", "They", "There", "Then", "I", "My", "We", "Suddenly"],
-                strategy: "This paragraph relies too heavily on repetitive 'Noun/Verb' starts.",
+                strategy: "Over-reliance on Noun/Verb starts creates repetitive rhythm. Try more daring openers.",
                 fallbackTip: "Vary your starts:\n• WHERE: 'Beside the road...'\n• WHEN: 'During the storm...'\n• WHY: 'To escape the cold...'\n• VERB: 'Smiling...'\n• FEELING: 'Thrilled...'",
                 specificTips: {
-                    "he": "Try a VERB start: 'Sprinting for his life, he dove for cover.'",
-                    "it": "Try a FEELING start: 'Amused by the spectacle, she watched it unfold.'",
-                    "suddenly": "Avoid 'Suddenly'—just show the action directly.",
-                    "analytical_default": "In Analytical writing, replace Noun/Verb starts with Logical Connectives:\n• ADDITION: 'Furthermore, the evidence shows...'\n• CONTRAST: 'Conversely, the author argues...'\n• RESULT: 'Consequently, the character fails...'\n• FOCUS: 'Significantly, the motif recurrs...'"
+                    "narrative_he": "Try a VERB start: 'Sprinting for his life, he dove for cover.'",
+                    "analytical_default": "Replace Noun/Verb starts with Logical Connectives:\n• ADDITION: 'Furthermore...'\n• CONTRAST: 'Conversely...'\n• RESULT: 'Consequently...'",
+                    "persuasive_default": "Replace Noun/Verb starts with Rhetorical Hooks:\n• QUESTION: 'How can we ignore...?'\n• COMMAND: 'Stop the destruction...'\n• IMAGINE: 'Imagine a world where...'"
                 }
             },
             {
@@ -278,8 +280,8 @@
                 color: "text-red-500",
                 isWeakness: true,
                 words: ["am", "is", "are", "was", "were", "be", "being", "been", "have", "has", "had", "do", "does", "did", "get", "got", "getting", "gotten"],
-                strategy: "Weak 'to-be' verbs often mask energy. Swap for vivid action verbs.",
-                specificTips: { "was": "Weak: 'She was running.'\nStrong: 'She sprinted.'", "got": "Weak: 'He got scared.'\nStrong: 'Panic seized him.'" }
+                strategy: "Utility verbs suggest weak action. Swap for vivid verbs.",
+                specificTips: { "was": "Weak: 'He was running.'\nStrong: 'He sprinted.'", "got": "Weak: 'He got scared.'\nStrong: 'Panic seized him.'" }
             },
             {
                 id: 'filter',
@@ -303,47 +305,21 @@
             }
         ];
 
-        // Analytical Specific Additions
         const analyticalLists = [
-            {
-                id: 'subjective',
-                title: "Subjectivity",
-                class: "hl-subjective",
-                color: "text-red-500",
-                isWeakness: true,
-                words: ["I", "me", "my", "mine", "we", "us", "our", "ours", "you", "your", "yours"],
-                strategy: "Analytical writing should be objective. Remove the self-reference to make your argument sound more authoritative.",
-                fallbackTip: "Weak: 'I think the poem is sad.'\nStrong: 'The poem explores themes of melancholy.'",
-                specificTips: { "i": "Instead of 'I think...', use 'Evidence suggests...' or 'It is evident that...'" }
-            },
-            {
-                id: 'contraction',
-                title: "Formal Voice",
-                class: "hl-contraction",
-                color: "text-amber-500",
-                isWeakness: true,
-                regex: /\b\w+['’](t|s|re|ve|ll|d|m)\b/gi,
-                strategy: "Contractions are too informal for analytical essays. Expand them to their full form.",
-                fallbackTip: "Change 'don't' to 'do not', 'can't' to 'cannot', etc."
-            },
-            {
-                id: 'modal',
-                title: "Modality",
-                class: "hl-modal",
-                color: "text-cyan-500",
-                isWeakness: true,
-                words: ["maybe", "might", "perhaps", "possibly", "probably", "sort of", "kind of", "mostly", "could", "likely"],
-                strategy: "Hedged words weaken your argument. Use 'High Modality' words to show certainty.",
-                fallbackTip: "Weak: 'Perhaps the character is mad.'\nStrong: 'Undeniably, the character's descent into madness illustrates...'",
-                specificTips: { "maybe": "Try: Certainly, definitely, undeniably, illustrates." }
-            }
+            { id: 'subjective', title: "Subjectivity", class: "hl-subjective", color: "text-red-500", isWeakness: true, words: ["I", "me", "my", "mine", "we", "us", "our", "ours", "you", "your", "yours"], strategy: "Keep essays objective. Remove self-references.", specificTips: { "i": "Instead of 'I think...', use 'Evidence suggests...'" } },
+            { id: 'contraction', title: "Formal Voice", class: "hl-contraction", color: "text-amber-500", isWeakness: true, regex: /\b\w+['’](t|s|re|ve|ll|d|m)\b/gi, strategy: "Contractions are too informal. Expand them." },
+            { id: 'modal', title: "Modality", class: "hl-modal", color: "text-cyan-500", isWeakness: true, words: ["maybe", "might", "perhaps", "possibly", "probably", "could", "likely"], strategy: "Avoid hedging. Show certainty.", specificTips: { "maybe": "Try: Undeniably, illustrates, confirms." } }
         ];
 
-        // Creative Specific Additions
         const creativeLists = [
-            { id: 'adverb', title: "Adverb", class: "hl-adverb", color: "text-amber-500", isWeakness: true, regex: /\b\w+ly\b/gi, strategy: "Adverbs often fix weak verbs. Find a powerful verb instead.", specificTips: { "quickly": "Try: Sprinted, darted." } },
-            { id: 'cliche', title: "Cliché", class: "hl-cliche", color: "text-slate-500", isWeakness: true, words: ["cold as ice", "piece of cake", "quiet as a mouse"], strategy: "Clichés lose impact. Invent an original comparison.", specificTips: { "cold as ice": "Original: 'Cold as a metal railing in mid-winter.'" } },
-            { id: 'habitual', title: "Habit", class: "hl-habitual", color: "text-indigo-400", isWeakness: true, words: ["would", "meaning that", "started to", "began to"], strategy: "These create 'lag'. Jump straight into the action." }
+            { id: 'adverb', title: "Adverb", class: "hl-adverb", color: "text-amber-500", isWeakness: true, regex: /\b\w+ly\b/gi, strategy: "Adverbs usually fix weak verbs. Find a powerful verb." },
+            { id: 'cliche', title: "Cliché", class: "hl-cliche", color: "text-slate-500", isWeakness: true, words: ["cold as ice", "piece of cake", "quiet as a mouse"], strategy: "Clichés lose impact. Invent an original comparison." },
+            { id: 'habitual', title: "Habit", class: "hl-habitual", color: "text-indigo-400", isWeakness: true, words: ["would", "meaning that", "started to", "began to"], strategy: "These create 'lag'. Jump straight into action." }
+        ];
+
+        const persuasiveLists = [
+            { id: 'modal_weak', title: "Hesitation", class: "hl-modal", color: "text-cyan-500", isWeakness: true, words: ["maybe", "might", "perhaps", "possibly", "probably", "could"], strategy: "Hesitation kills persuasion. Be bold and certain.", specificTips: { "maybe": "Try: Certainly, Undeniably, Without a doubt." } },
+            { id: 'habitual', title: "Filler Habit", class: "hl-habitual", color: "text-indigo-400", isWeakness: true, words: ["started to", "proceeded to", "meaning that"], strategy: "Get to the point. Authority needs efficiency." }
         ];
 
         const editor = document.getElementById('editor');
@@ -353,16 +329,31 @@
         function toggleTheme() { document.body.classList.toggle('light-mode'); }
         
         function toggleMode() {
-            currentMode = currentMode === 'narrative' ? 'analytical' : 'narrative';
+            const modes = ['narrative', 'analytical', 'persuasive'];
+            let idx = (modes.indexOf(currentMode) + 1) % modes.length;
+            currentMode = modes[idx];
+            
             document.getElementById('mode-label').innerText = currentMode.charAt(0).toUpperCase() + currentMode.slice(1);
-            document.getElementById('mode-toggle').classList.toggle('text-indigo-400');
-            document.getElementById('dynamic-stat-label').innerText = currentMode === 'narrative' ? 'Sensory Spice' : 'Logic Links';
-            document.getElementById('dynamic-stat-sub').innerText = currentMode === 'narrative' ? 'Sight, Sound, Smell, etc.' : 'Transitions/Connectors';
+            
+            // UI Label Swaps
+            const dynamicLabel = document.getElementById('dynamic-stat-label');
+            const dynamicSub = document.getElementById('dynamic-stat-sub');
+            
+            if (currentMode === 'narrative') {
+                dynamicLabel.innerText = 'Sensory Spice';
+                dynamicSub.innerText = 'Sight, Sound, Smell, etc.';
+            } else if (currentMode === 'analytical') {
+                dynamicLabel.innerText = 'Logic Links';
+                dynamicSub.innerText = 'Transitions/Connectors';
+            } else {
+                dynamicLabel.innerText = 'Power Plays';
+                dynamicSub.innerText = 'Emotive & Rhetorical Weight';
+            }
+            
             analyzeText();
         }
 
         function copyToClipboard() { const el = document.createElement('textarea'); el.value = editor.innerText; document.body.appendChild(el); el.select(); document.execCommand('copy'); document.body.removeChild(el); }
-
         function getStem(word) { return word.toLowerCase().replace(/(ing|ed|es|ly|s)$/, '').replace(/([aeiou])\1$/, '$1'); }
 
         function analyzeText() {
@@ -372,64 +363,56 @@
             const words = rawText.match(/\b\w+\b/g) || [];
             const matchMap = new Map();
             let actualWeaknessCount = 0;
-            let positiveCount = 0; // Sensory or Logic Links
+            let positiveCount = 0;
 
-            // Merge relevant lists based on mode
-            const activeLists = [...baseLists, ...(currentMode === 'narrative' ? creativeLists : analyticalLists)];
+            const activeLists = [...baseLists, ...(currentMode === 'narrative' ? creativeLists : (currentMode === 'analytical' ? analyticalLists : persuasiveLists))];
 
-            // 1. Paragraph-Aware Bad Starts (40% Threshold)
+            // 1. Bad Starts (40% Density Check)
             const paragraphs = rawText.split(/\n+/);
-            const badStartCategory = activeLists.find(l => l.id === 'badstart');
-            const badStartList = new Set(badStartCategory.words.map(w => w.toLowerCase()));
-            let currentGlobalIdx = 0;
-
+            const bsCat = activeLists.find(l => l.id === 'badstart');
+            const bsList = new Set(bsCat.words.map(w => w.toLowerCase()));
+            let gIdx = 0;
             paragraphs.forEach(para => {
-                if (!para.trim()) { currentGlobalIdx += para.length + 1; return; }
+                if (!para.trim()) { gIdx += para.length + 1; return; }
                 const sentences = para.match(/[^.?!]+[.?!]*/g) || [para];
-                let badStartSentences = [];
-                let paraOffset = 0;
-                sentences.forEach(sent => {
-                    const firstWordMatch = sent.trim().match(/^\b\w+\b/i);
-                    if (firstWordMatch && badStartList.has(firstWordMatch[0].toLowerCase())) {
-                        badStartSentences.push({ index: currentGlobalIdx + paraOffset + sent.indexOf(firstWordMatch[0]), word: firstWordMatch[0], len: firstWordMatch[0].length });
-                    }
-                    paraOffset += sent.length;
+                let caught = [];
+                let pOffset = 0;
+                sentences.forEach(s => {
+                    const m = s.trim().match(/^\b\w+\b/i);
+                    if (m && bsList.has(m[0].toLowerCase())) caught.push({ i: gIdx + pOffset + s.indexOf(m[0]), w: m[0], l: m[0].length });
+                    pOffset += s.length;
                 });
-                if (sentences.length > 1 && (badStartSentences.length / sentences.length) >= 0.4) {
-                    badStartSentences.forEach(bs => {
-                        matchMap.set(bs.index, { len: bs.len, category: badStartCategory, rawWord: bs.word });
-                        actualWeaknessCount++;
-                    });
+                if (sentences.length > 1 && (caught.length / sentences.length) >= 0.4) {
+                    caught.forEach(c => { matchMap.set(c.i, { len: c.l, category: bsCat, rawWord: c.w }); actualWeaknessCount++; });
                 }
-                currentGlobalIdx += para.length + 1;
+                gIdx += para.length + 1;
             });
 
-            // 2. Fixed Lists
+            // 2. Fixed Weaknesses
             activeLists.filter(l => l.id !== 'badstart').forEach(list => {
                 const regex = list.regex || new RegExp(`\\b(${[...list.words].sort((a,b) => b.length - a.length).join('|')})\\b`, 'gi');
                 let m;
                 while ((m = regex.exec(rawText)) !== null) {
-                    if (!matchMap.has(m.index)) {
-                        matchMap.set(m.index, { len: m[0].length, category: list, rawWord: m[0] });
-                        if (list.isWeakness) actualWeaknessCount++;
-                    }
+                    if (!matchMap.has(m.index)) { matchMap.set(m.index, { len: m[0].length, category: list, rawWord: m[0] }); if (list.isWeakness) actualWeaknessCount++; }
                 }
             });
 
-            // 3. Positive Highlights (Sensory or Logic)
+            // 3. Mode-Specific Positives
             const logicWords = ["Furthermore", "However", "Consequently", "Therefore", "Moreover", "Conversely", "Additionally", "Significantly", "Primarily", "Ultimately"];
             const sensoryWords = ["glistened", "thundered", "velvety", "fragrant", "bitter", "shimmered", "roared", "stale"];
-            const targetPositives = currentMode === 'narrative' ? sensoryWords : logicWords;
-            const posRegex = new RegExp(`\\b(${targetPositives.join('|')})\\b`, 'gi');
+            const persuasivePositives = ["Imagine", "We", "Us", "Our", "Crucial", "Vital", "Devastating", "Appalling", "Magnificent", "Surely", "Certainly"];
+            
+            const targets = currentMode === 'narrative' ? sensoryWords : (currentMode === 'analytical' ? logicWords : persuasivePositives);
+            const posRegex = new RegExp(`\\b(${targets.join('|')})\\b`, 'gi');
             let pm;
             while ((pm = posRegex.exec(rawText)) !== null) {
                 if (!matchMap.has(pm.index)) {
-                    matchMap.set(pm.index, { len: pm[0].length, category: { class: 'hl-sensory', title: currentMode === 'narrative' ? 'Sensory' : 'Connector', strategy: 'Excellent use of stylistic tools.', fallbackTip: 'Keep it up!' }, rawWord: pm[0] });
+                    matchMap.set(pm.index, { len: pm[0].length, category: { class: 'hl-sensory', title: (currentMode === 'narrative' ? 'Sensory' : (currentMode === 'analytical' ? 'Connector' : 'Power Play')), strategy: 'Excellent use of stylistic tools.', fallbackTip: 'This builds impact and authority.' }, rawWord: pm[0] });
                 }
                 positiveCount++;
             }
 
-            // 4. Repetition
+            // 4. Repetition Analysis
             const stemFreq = {};
             const familyMap = {}; 
             const stopWords = new Set(["a", "an", "the", "and", "but", "or", "so", "if", "of", "in", "on", "at", "by", "with", "from", "to", "is", "was", "were", "are", "be", "been", "have", "had", "it", "he", "she", "they"]);
@@ -457,10 +440,9 @@
                 const data = matchMap.get(idx);
                 finalHTML += rawText.substring(lastIdx, idx).replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
                 const wordKey = data.rawWord.toLowerCase();
-                let specificTip = data.category.specificTips?.[wordKey] || data.category.fallbackTip || "";
-                if (data.category.id === 'badstart' && currentMode === 'analytical') specificTip = data.category.specificTips.analytical_default;
+                let tip = data.category.specificTips?.[wordKey] || (data.category.id === 'badstart' ? (currentMode === 'analytical' ? data.category.specificTips.analytical_default : (currentMode === 'persuasive' ? data.category.specificTips.persuasive_default : data.category.fallbackTip)) : data.category.fallbackTip) || "";
                 
-                finalHTML += `<span class="hl ${data.category.class}" data-title="${data.category.title}" data-word="${data.rawWord}" data-strategy="${data.category.strategy}" data-example="${specificTip.replace(/\n/g, '\\n')}">${rawText.substring(idx, idx + data.len)}</span>`;
+                finalHTML += `<span class="hl ${data.category.class}" data-title="${data.category.title}" data-word="${data.rawWord}" data-strategy="${data.category.strategy}" data-example="${tip.replace(/\n/g, '\\n')}">${rawText.substring(idx, idx + data.len)}</span>`;
                 lastIdx = idx + data.len;
             });
             finalHTML += rawText.substring(lastIdx).replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
@@ -482,35 +464,42 @@
             const unique = wc > 0 ? Math.round((new Set(words.map(w => w.toLowerCase())).size / wc) * 100) : 0;
             document.getElementById('stat-unique').innerText = unique + "%";
             
-            // Unique Flavor Popup Data
-            const uniqueTip = currentMode === 'narrative' 
-                ? "CREATIVE ADVICE: Use specific nouns (not 'tree', but 'oak'). Use vivid verbs (not 'ran', but 'bolted'). Vary your sentence lengths to create rhythm."
-                : "ANALYTICAL ADVICE: Use nominalization (not 'He discovered', but 'The discovery'). Use precise verbs of analysis (illustrates, highlights, juxtaposes, correlates).";
-            document.getElementById('unique-flavor-card').dataset.example = uniqueTip;
+            // Advanced Flavor Advice Popup
+            const uniqueAdvice = currentMode === 'narrative' 
+                ? "CREATIVE: Use specific nouns (Oak vs Tree). Use vivid verbs (Bolted vs Ran). Vary sentence lengths to create a 'heartbeat' in your prose."
+                : (currentMode === 'analytical' 
+                    ? "ANALYTICAL: Use nominalization (The 'rebellion' vs They 'rebelled'). Use precise analytical verbs: highlights, juxtaposes, scrutinizes."
+                    : "PERSUASIVE: Use Emotive Language (Devastating vs Bad). Use Tricolon (Rule of 3). Use Absolutes to show unwavering authority.");
+            document.getElementById('unique-flavor-card').dataset.example = uniqueAdvice;
 
-            document.getElementById('category-list').innerHTML = [...baseLists, ...(currentMode === 'narrative' ? creativeLists : analyticalLists)].map(l => {
-                const count = editor.querySelectorAll(`.${l.class}`).length;
-                return `<div class="flex justify-between items-center text-[10px] font-black p-4 stat-card rounded-2xl"><span class="${l.color} uppercase tracking-tighter">${l.title}</span><span class="opacity-30 font-bold">${count}</span></div>`;
+            document.getElementById('category-list').innerHTML = baseLists.concat(currentMode === 'narrative' ? creativeLists : (currentMode === 'analytical' ? analyticalLists : persuasiveLists)).map(l => {
+                return `<div class="flex justify-between items-center text-[10px] font-black p-4 stat-card rounded-2xl"><span class="${l.color} uppercase tracking-tighter">${l.title}</span><span class="opacity-30 font-bold">${editor.querySelectorAll(`.${l.class}`).length}</span></div>`;
             }).join('');
 
             const topFreq = Object.entries(stemFreq).filter(f => f[1] >= 2).sort((a,b) => b[1]-a[1]);
             document.getElementById('freq-words').innerHTML = topFreq.length > 0 ? topFreq.slice(0, 5).map(([s, c]) => `<div class="flex justify-between items-center text-sm border-b border-white/20 pb-3"><div class="flex flex-col"><span class="font-medium italic">${Array.from(familyMap[s]).join(' / ')}</span><span class="text-[8px] opacity-40 uppercase font-black">Family Match</span></div><span class="text-xl font-black opacity-80">${c}x</span></div>`).join('') : `<p class="opacity-70 text-sm italic">Clear as a bell.</p>`;
+            
+            let rhythm = {s:0, m:0, l:0};
+            (paras.join('').match(/[^.?!]+[.?!]*/g) || []).forEach(s => { const w = (s.match(/\b\w+\b/g) || []).length; if (w <= 10) rhythm.s++; else if (w >= 25) rhythm.l++; else rhythm.m++; });
+            document.getElementById('sent-short').innerText = rhythm.s;
+            document.getElementById('sent-medium').innerText = rhythm.m;
+            document.getElementById('sent-long').innerText = rhythm.l;
         }
 
         function attachTooltipEvents() {
             document.querySelectorAll('.hl').forEach(hl => {
                 hl.addEventListener('mouseenter', (e) => {
-                    if (!tipsEnabled) return;
-                    const tooltipTitle = document.getElementById('tooltip-title');
-                    const tooltipWord = document.getElementById('tooltip-word');
-                    const tooltipText = document.getElementById('tooltip-text');
-                    const tooltipExample = document.getElementById('tooltip-example');
+                    if (!tipsEnabled && !hl.classList.contains('stat-card')) return;
+                    const ttTitle = document.getElementById('tooltip-title');
+                    const ttWord = document.getElementById('tooltip-word');
+                    const ttText = document.getElementById('tooltip-text');
+                    const ttExample = document.getElementById('tooltip-example');
                     
-                    tooltipTitle.innerText = hl.dataset.title;
-                    tooltipWord.innerText = hl.dataset.word;
-                    tooltipText.innerText = hl.dataset.strategy;
-                    tooltipExample.innerText = hl.dataset.example.replace(/\\n/g, '\n');
-                    tooltipExample.style.display = hl.dataset.example ? 'block' : 'none';
+                    ttTitle.innerText = hl.dataset.title;
+                    ttWord.innerText = hl.dataset.word;
+                    ttText.innerText = hl.dataset.strategy;
+                    ttExample.innerText = hl.dataset.example.replace(/\\n/g, '\n');
+                    ttExample.style.display = hl.dataset.example ? 'block' : 'none';
                     tooltip.style.display = 'block';
                     
                     const rect = hl.getBoundingClientRect();
@@ -527,7 +516,7 @@
         }
 
         window.onload = () => {
-            editor.innerText = "I think the character is happy. He decided he was happy, meaning that he felt nice. He would often smile. (Switch to Narrative/Analytical to see the difference!)";
+            editor.innerText = "I think we should help. We might be able to win, meaning that everyone gets a nice prize. It would be a piece of cake. Imagine a better world!";
             analyzeText();
         }
     </script>
