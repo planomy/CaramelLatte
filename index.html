@@ -17,6 +17,7 @@
             --text-muted: #5c4a40;
             --border: #2d241f;
             --accent: #d97706;
+            --analytical-accent: #6366f1;
         }
 
         .light-mode {
@@ -57,6 +58,9 @@
         .hl-adverb { background-color: #f59e0b; color: #000; }
         .hl-cliche { background-color: #64748b; color: #fff; }
         .hl-habitual { background-color: #6366f1; color: #fff; }
+        .hl-subjective { background-color: #ef4444; color: #fff; }
+        .hl-contraction { background-color: #f59e0b; color: #000; }
+        .hl-modal { background-color: #06b6d4; color: #fff; }
         .hl-sensory { border-bottom: 3px solid #f43f5e; color: inherit; border-radius: 0; }
         .hl-frequent { border-bottom: 2px dashed var(--accent); color: inherit; font-weight: 700; }
         .hl-stop { border-bottom: 2px solid #846d62; color: inherit; font-weight: normal; opacity: 0.6; }
@@ -86,6 +90,7 @@
         .stat-card {
             background-color: var(--bg-card);
             border: 1px solid var(--border);
+            transition: all 0.3s ease;
         }
 
         #tooltip {
@@ -130,6 +135,12 @@
                     <p class="text-[11px] uppercase tracking-[0.4em] opacity-40 font-black mt-2">Mr C's caffeinated writing lab</p>
                 </div>
                 <div class="flex items-center gap-2">
+                    <button id="mode-toggle" onclick="toggleMode()" class="p-4 rounded-2xl bg-amber-600/10 hover:bg-amber-600/20 text-amber-600 transition-all flex items-center justify-center gap-2" title="Switch Genre">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z" />
+                        </svg>
+                        <span id="mode-label" class="text-[10px] font-black uppercase tracking-widest hidden sm:inline">Narrative</span>
+                    </button>
                     <button id="tip-toggle" onclick="toggleTips()" class="p-4 rounded-2xl bg-amber-600/10 hover:bg-amber-600/20 text-amber-600 transition-all flex items-center justify-center" title="Toggle Tips">
                         <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z" />
@@ -176,21 +187,21 @@
                         <p id="sent-total" class="text-3xl font-black">0</p>
                     </div>
                     <div>
-                        <p class="text-[10px] uppercase tracking-[0.1em] font-black mb-2 opacity-50 text-amber-500 leading-tight">Average Length</p>
+                        <p class="text-[10px] uppercase tracking-[0.1em] font-black mb-2 opacity-50 text-amber-500 leading-tight">Avg Length</p>
                         <p id="stat-avg" class="text-3xl font-black font-mono">0</p>
                     </div>
                 </div>
 
                 <div class="flex gap-4 text-center">
-                    <div class="flex-1 bg-white/5 p-4 rounded-2xl">
+                    <div class="flex-1 bg-white/5 p-4 rounded-2xl border border-white/5">
                         <p class="text-[9px] uppercase font-black opacity-40 mb-1">Short</p>
                         <p id="sent-short" class="text-base font-black">0</p>
                     </div>
-                    <div class="flex-1 bg-white/5 p-4 rounded-2xl">
+                    <div class="flex-1 bg-white/5 p-4 rounded-2xl border border-white/5">
                         <p class="text-[9px] uppercase font-black opacity-40 mb-1">Medium</p>
                         <p id="sent-medium" class="text-base font-black">0</p>
                     </div>
-                    <div class="flex-1 bg-white/5 p-4 rounded-2xl">
+                    <div class="flex-1 bg-white/5 p-4 rounded-2xl border border-white/5">
                         <p class="text-[9px] uppercase font-black opacity-40 mb-1">Long</p>
                         <p id="sent-long" class="text-base font-black">0</p>
                     </div>
@@ -200,7 +211,7 @@
             <!-- Weakness Meter -->
             <div class="mb-6 bg-amber-600/5 p-8 rounded-[2rem] border-2 border-amber-600/10">
                 <div class="flex justify-between items-end mb-4">
-                    <p class="text-xs font-black uppercase tracking-widest opacity-80">Weakness Score</p>
+                    <p id="meter-label" class="text-xs font-black uppercase tracking-widest opacity-80">Polished Prose Score</p>
                     <p id="weak-percent" class="text-5xl font-black text-amber-600">0%</p>
                 </div>
                 <div class="h-4 w-full bg-black/20 rounded-full overflow-hidden">
@@ -208,24 +219,23 @@
                 </div>
             </div>
 
-            <!-- Categories Grid -->
             <div class="grid grid-cols-2 xl:grid-cols-3 gap-3 mb-6" id="category-list"></div>
 
-            <!-- Student Analytics -->
             <div class="grid grid-cols-2 gap-3 mb-6">
-                <div class="stat-card p-6 rounded-3xl flex flex-col items-center border-rose-500/20 border">
-                    <p class="text-[10px] font-black uppercase tracking-widest opacity-50 mb-2">Sensory Spice</p>
-                    <p id="stat-sensory" class="text-2xl font-black text-rose-500">0</p>
-                    <p class="text-[8px] opacity-40 mt-1 uppercase text-center">Sight, Sound, Smell, etc.</p>
+                <!-- Sensory / Logic Stat -->
+                <div id="dynamic-stat-card" class="hl stat-card p-6 rounded-3xl flex flex-col items-center border-rose-500/20 border" data-title="Stat Guide" data-word="Metric" data-strategy="This tracks your use of specific stylistic devices." data-example="Loading...">
+                    <p id="dynamic-stat-label" class="text-[10px] font-black uppercase tracking-widest opacity-50 mb-2">Sensory Spice</p>
+                    <p id="stat-dynamic" class="text-2xl font-black text-rose-500">0</p>
+                    <p id="dynamic-stat-sub" class="text-[8px] opacity-40 mt-1 uppercase text-center">Sight, Sound, Smell, etc.</p>
                 </div>
-                <div class="stat-card p-6 rounded-3xl flex flex-col items-center border-emerald-500/20 border">
+                <!-- Unique Flavors Stat -->
+                <div id="unique-flavor-card" class="hl stat-card p-6 rounded-3xl flex flex-col items-center border-emerald-500/20 border" data-title="Vocal Richness" data-word="Flavor" data-strategy="High uniqueness means you are using a varied, professional vocabulary." data-example="Narrative: Use specific nouns (Oak instead of Tree).\nAnalytical: Use nominalization (Discovery instead of Discover).">
                     <p class="text-[10px] font-black uppercase tracking-widest opacity-50 mb-2">Unique Flavors</p>
                     <p id="stat-unique" class="text-2xl font-black text-emerald-500">0%</p>
-                    <p class="text-[8px] opacity-40 mt-1 uppercase text-center">Vocabulary Richness</p>
+                    <p class="text-[8px] opacity-40 mt-1 uppercase text-center">Rich Vocabulary</p>
                 </div>
             </div>
 
-            <!-- Repeated Words -->
             <div class="bg-amber-600 p-8 rounded-[2rem] text-white shadow-2xl shadow-amber-900/20 mb-8">
                 <h3 class="text-xs font-black mb-5 uppercase tracking-[0.2em]">Repeated Families</h3>
                 <div id="freq-words" class="space-y-3">
@@ -235,7 +245,6 @@
         </aside>
     </div>
 
-    <!-- App-Wide Footer -->
     <footer class="w-full py-10 border-t border-white/5 opacity-30 text-center bg-[var(--bg-main)]">
         <p class="text-[10px] font-black uppercase tracking-[0.6em] mb-3">Finely Crafted</p>
         <p class="text-[9px] font-bold tracking-[0.2em]">&copy; COPYRIGHT 2026 NIC COMINO. ALL RIGHTS RESERVED.</p>
@@ -243,8 +252,9 @@
 
     <script>
         let tipsEnabled = true;
+        let currentMode = 'narrative'; // 'narrative' or 'analytical'
 
-        const listsData = [
+        const baseLists = [
             {
                 id: 'badstart',
                 title: "Opening Variety",
@@ -252,14 +262,13 @@
                 color: "text-blue-500",
                 isWeakness: true,
                 words: ["The", "It", "A", "An", "He", "She", "His", "Her", "This", "These", "Those", "They", "There", "Then", "I", "My", "We", "Suddenly"],
-                strategy: "This paragraph relies too heavily on repetitive 'Noun/Verb' starts. Try mixing in Where, When, Why, Verb, or Feeling openers to vary your rhythm.",
-                fallbackTip: "Vary your starts:\n• WHERE: 'Beside the road, a lone tree stood.'\n• WHEN: 'During the storm, the power failed.'\n• WHY: 'To escape the cold, he ran inside.'\n• VERB: 'Smiling, she accepted the prize.'\n• FEELING: 'Thrilled with the news, he cheered.'",
+                strategy: "This paragraph relies too heavily on repetitive 'Noun/Verb' starts.",
+                fallbackTip: "Vary your starts:\n• WHERE: 'Beside the road...'\n• WHEN: 'During the storm...'\n• WHY: 'To escape the cold...'\n• VERB: 'Smiling...'\n• FEELING: 'Thrilled...'",
                 specificTips: {
-                    "he": "Try a VERB start: 'Sprinting for his life, he dove for cover.'\nTry a WHERE start: 'Behind the old oak, he waited in silence.'",
-                    "the": "Try a WHEN start: 'After the final bell rang, the students bolted for the exit.'\nTry a WHERE start: 'Deep in the forest, the campfire crackled.'",
-                    "it": "Try a FEELING start: 'Amused by the spectacle, she watched it unfold.'\nTry a WHY start: 'To understand the puzzle, he took it apart.'",
-                    "suddenly": "Avoid 'Suddenly'—it's a 'telling' word. Just show the sudden action: 'A gunshot cracked through the stillness.'",
-                    "i": "Try a VERB start: 'Hiking up the mountain, I spotted a hawk.'\nTry a WHERE start: 'Beneath the surface, I found the treasure.'"
+                    "he": "Try a VERB start: 'Sprinting for his life, he dove for cover.'",
+                    "it": "Try a FEELING start: 'Amused by the spectacle, she watched it unfold.'",
+                    "suddenly": "Avoid 'Suddenly'—just show the action directly.",
+                    "analytical_default": "In Analytical writing, replace Noun/Verb starts with Logical Connectives:\n• ADDITION: 'Furthermore, the evidence shows...'\n• CONTRAST: 'Conversely, the author argues...'\n• RESULT: 'Consequently, the character fails...'\n• FOCUS: 'Significantly, the motif recurrs...'"
                 }
             },
             {
@@ -269,13 +278,8 @@
                 color: "text-red-500",
                 isWeakness: true,
                 words: ["am", "is", "are", "was", "were", "be", "being", "been", "have", "has", "had", "do", "does", "did", "get", "got", "getting", "gotten"],
-                strategy: "Weak 'to-be' verbs often mask the energy of your story. Replace them with vivid action verbs.",
-                fallbackTip: "Weak: 'The ball was thrown.'\nStrong: 'He hurled the ball.'",
-                specificTips: {
-                    "was": "Weak: 'He was running.'\nStrong: 'He sprinted.'\n\nWeak: 'The door was open.'\nStrong: 'The door hung ajar on rusted hinges.'",
-                    "got": "Weak: 'He got scared.'\nStrong: 'Panic seized him, making his breath hitch.'",
-                    "is": "Weak: 'The park is loud.'\nStrong: 'Laughter and shrieks echoed through the park.'"
-                }
+                strategy: "Weak 'to-be' verbs often mask energy. Swap for vivid action verbs.",
+                specificTips: { "was": "Weak: 'She was running.'\nStrong: 'She sprinted.'", "got": "Weak: 'He got scared.'\nStrong: 'Panic seized him.'" }
             },
             {
                 id: 'filter',
@@ -284,87 +288,8 @@
                 color: "text-purple-500",
                 isWeakness: true,
                 words: ["think", "thought", "believe", "feel", "felt", "notice", "noticed", "decide", "know", "knew", "see", "saw", "look", "looked", "wonder", "seem", "seemed", "hear", "heard", "realize", "realized", "decided", "understand", "understood", "remember", "remembered", "wondered"],
-                strategy: "Filter words distance the reader from the experience. Delete the filter to submerge the reader directly in the scene.",
-                fallbackTip: "Weak: 'I saw the fire.'\nStrong: 'Flames licked at the ceiling.'",
-                specificTips: {
-                    "decided": "Weak: 'He decided to run.'\nStrong: 'He bolted for the tree line.'",
-                    "knew": "Weak: 'She knew she was late.'\nStrong: 'The clock mocked her with every loud tick.'",
-                    "realized": "Weak: 'He realized he was lost.'\nStrong: 'The street signs were unreadable, faded by years of sun.'",
-                    "saw": "Weak: 'I saw the dragon roar.'\nStrong: 'The dragon roared, shaking the loose stones from the ceiling.'",
-                    "felt": "Weak: 'He felt the cold.'\nStrong: 'The wind bit through his jacket like icy needles.'"
-                }
-            },
-            {
-                id: 'habitual',
-                title: "Habit",
-                class: "hl-habitual",
-                color: "text-indigo-400",
-                isWeakness: true,
-                words: ["would", "meaning that", "started to", "began to", "used to", "proceeded to", "seemed to", "managed to", "going to", "was able to"],
-                strategy: "These patterns create 'lag' or wordiness. Jump straight into the action.",
-                fallbackTip: "Weak: 'He would sit there.'\nStrong: 'He sat there.'",
-                specificTips: {
-                    "would": "Weak: 'He would walk to school.'\nStrong: 'He walked to school.'",
-                    "meaning that": "Weak: 'He tripped, meaning that he fell.'\nStrong: 'He tripped and crashed to the pavement.'",
-                    "started to": "Weak: 'The rain started to fall.'\nStrong: 'Rain lashed against the windows.'"
-                }
-            },
-            {
-                id: 'filler',
-                title: "Filler",
-                class: "hl-filler",
-                color: "text-pink-500",
-                isWeakness: true,
-                words: ["very", "really", "just", "quite", "too", "actually", "basically", "totally", "definitely", "literally", "simply", "truly", "extremely", "somewhat", "rather", "pretty", "highly"],
-                strategy: "Intensifiers are 'empty' modifiers. Remove them or find a more powerful root word.",
-                fallbackTip: "Weak: 'Very hot.'\nStrong: 'Sweltering.'",
-                specificTips: {
-                    "very": "Weak: 'Very loud.'\nStrong: 'Deafening / Thundering.'",
-                    "just": "Weak: 'I just wanted to leave.'\nStrong: 'I yearned to escape.'"
-                }
-            },
-            {
-                id: 'adverb',
-                title: "Adverb",
-                class: "hl-adverb",
-                color: "text-amber-500",
-                isWeakness: true,
-                regex: /\b\w+ly\b/gi,
-                strategy: "Adverbs usually try to fix weak verbs. Find a powerful verb that does the work on its own.",
-                fallbackTip: "Weak: 'Ran quickly.'\nStrong: 'Sprinted.'",
-                specificTips: {
-                    "quickly": "Try: Sprinted, darted, hurried, bolted, dashed.",
-                    "softly": "Try: Whispered, murmured, breathed, hissed.",
-                    "loudly": "Try: Bellowed, shouted, shrieked, roared."
-                }
-            },
-            {
-                id: 'cliche',
-                title: "Cliché",
-                class: "hl-cliche",
-                color: "text-slate-500",
-                isWeakness: true,
-                words: ["cold as ice", "white as a sheet", "quiet as a mouse", "at the end of the day", "avoid like the plague", "piece of cake", "break the ice", "light as a feather", "red as a beet", "scared to death"],
-                strategy: "Clichés lose impact because they are overused. Try an original comparison.",
-                fallbackTip: "Original: 'Cold as a metal railing in mid-winter.'",
-                specificTips: {
-                    "cold as ice": "Original: 'Cold as a metal railing in mid-winter.'",
-                    "quiet as a mouse": "Original: 'Quiet as a held breath.'"
-                }
-            },
-            {
-                id: 'sensory',
-                title: "Sensory",
-                class: "hl-sensory",
-                color: "text-rose-500",
-                isWeakness: false,
-                words: ["glistened", "shimmered", "roared", "thundered", "stale", "sweet", "rough", "velvety", "glared", "shadowy", "scented", "bitter", "crumbled", "fragrant", "sticky", "clattering"],
-                strategy: "Great sensory detail! This brings the scene to life for your reader.",
-                fallbackTip: "Sight, Sound, Smell, Touch, or Taste—keep using vivid descriptors!",
-                specificTips: {
-                    "glistened": "Sight: Helps the reader see the light in your scene.",
-                    "thundered": "Sound: Makes the scene feel intense and heavy."
-                }
+                strategy: "Filter words distance the reader. Describe the event directly.",
+                specificTips: { "saw": "Weak: 'I saw the fire.'\nStrong: 'Flames licked at the ceiling.'" }
             },
             {
                 id: 'basic',
@@ -372,75 +297,103 @@
                 class: "hl-basic",
                 color: "text-emerald-500",
                 isWeakness: true,
-                words: ["nice", "good", "bad", "big", "small", "fun", "stuff", "thing", "walk", "run", "went", "came", "say", "said", "go", "make", "take", "find", "happy", "sad", "scared", "angry", "looked", "look", "found", "things"],
-                strategy: "Generic vocabulary lacks sensory flavor. Upgrade to precise, specific terminology.",
-                fallbackTip: "Weak: 'It was a nice car.'\nStrong: 'A vintage Jaguar gleamed in the driveway.'",
-                specificTips: {
-                    "said": "Try: Whispered, barked, admitted, hissed, blurted.",
-                    "walked": "Try: Stumbled, strutted, crept, lumbered, strolled.",
-                    "big": "Try: Towering, vast, hulking, massive, colossal.",
-                    "scared": "Show it: Heart hammering, cold sweat, knees trembling.",
-                    "happy": "Show it: Beaming, radiant, glowing, light on their feet.",
-                    "look": "Try: Peer, gaze, glare, squint, observe, inspect."
-                }
+                words: ["nice", "good", "bad", "big", "small", "fun", "stuff", "thing", "walk", "run", "went", "came", "say", "said", "go", "make", "take", "find", "happy", "sad", "scared", "angry", "looked", "look", "found", "find", "things"],
+                strategy: "Upgrading to a more specific word gives precision and flavor.",
+                specificTips: { "said": "Try: Whispered, barked, admitted.", "walked": "Try: Stumbled, strutted, crept." }
             }
+        ];
+
+        // Analytical Specific Additions
+        const analyticalLists = [
+            {
+                id: 'subjective',
+                title: "Subjectivity",
+                class: "hl-subjective",
+                color: "text-red-500",
+                isWeakness: true,
+                words: ["I", "me", "my", "mine", "we", "us", "our", "ours", "you", "your", "yours"],
+                strategy: "Analytical writing should be objective. Remove the self-reference to make your argument sound more authoritative.",
+                fallbackTip: "Weak: 'I think the poem is sad.'\nStrong: 'The poem explores themes of melancholy.'",
+                specificTips: { "i": "Instead of 'I think...', use 'Evidence suggests...' or 'It is evident that...'" }
+            },
+            {
+                id: 'contraction',
+                title: "Formal Voice",
+                class: "hl-contraction",
+                color: "text-amber-500",
+                isWeakness: true,
+                regex: /\b\w+['’](t|s|re|ve|ll|d|m)\b/gi,
+                strategy: "Contractions are too informal for analytical essays. Expand them to their full form.",
+                fallbackTip: "Change 'don't' to 'do not', 'can't' to 'cannot', etc."
+            },
+            {
+                id: 'modal',
+                title: "Modality",
+                class: "hl-modal",
+                color: "text-cyan-500",
+                isWeakness: true,
+                words: ["maybe", "might", "perhaps", "possibly", "probably", "sort of", "kind of", "mostly", "could", "likely"],
+                strategy: "Hedged words weaken your argument. Use 'High Modality' words to show certainty.",
+                fallbackTip: "Weak: 'Perhaps the character is mad.'\nStrong: 'Undeniably, the character's descent into madness illustrates...'",
+                specificTips: { "maybe": "Try: Certainly, definitely, undeniably, illustrates." }
+            }
+        ];
+
+        // Creative Specific Additions
+        const creativeLists = [
+            { id: 'adverb', title: "Adverb", class: "hl-adverb", color: "text-amber-500", isWeakness: true, regex: /\b\w+ly\b/gi, strategy: "Adverbs often fix weak verbs. Find a powerful verb instead.", specificTips: { "quickly": "Try: Sprinted, darted." } },
+            { id: 'cliche', title: "Cliché", class: "hl-cliche", color: "text-slate-500", isWeakness: true, words: ["cold as ice", "piece of cake", "quiet as a mouse"], strategy: "Clichés lose impact. Invent an original comparison.", specificTips: { "cold as ice": "Original: 'Cold as a metal railing in mid-winter.'" } },
+            { id: 'habitual', title: "Habit", class: "hl-habitual", color: "text-indigo-400", isWeakness: true, words: ["would", "meaning that", "started to", "began to"], strategy: "These create 'lag'. Jump straight into the action." }
         ];
 
         const editor = document.getElementById('editor');
         const tooltip = document.getElementById('tooltip');
-        const tooltipTitle = document.getElementById('tooltip-title');
-        const tooltipWord = document.getElementById('tooltip-word');
-        const tooltipText = document.getElementById('tooltip-text');
-        const tooltipExample = document.getElementById('tooltip-example');
 
+        function toggleTips() { tipsEnabled = !tipsEnabled; document.getElementById('tip-toggle').style.opacity = tipsEnabled ? "1" : "0.4"; if (!tipsEnabled) tooltip.style.display = "none"; }
         function toggleTheme() { document.body.classList.toggle('light-mode'); }
-
-        function toggleTips() {
-            tipsEnabled = !tipsEnabled;
-            document.getElementById('tip-toggle').style.opacity = tipsEnabled ? "1" : "0.4";
-            if (!tipsEnabled) tooltip.style.display = "none";
+        
+        function toggleMode() {
+            currentMode = currentMode === 'narrative' ? 'analytical' : 'narrative';
+            document.getElementById('mode-label').innerText = currentMode.charAt(0).toUpperCase() + currentMode.slice(1);
+            document.getElementById('mode-toggle').classList.toggle('text-indigo-400');
+            document.getElementById('dynamic-stat-label').innerText = currentMode === 'narrative' ? 'Sensory Spice' : 'Logic Links';
+            document.getElementById('dynamic-stat-sub').innerText = currentMode === 'narrative' ? 'Sight, Sound, Smell, etc.' : 'Transitions/Connectors';
+            analyzeText();
         }
 
-        function copyToClipboard() {
-            const el = document.createElement('textarea');
-            el.value = editor.innerText;
-            document.body.appendChild(el);
-            el.select();
-            document.execCommand('copy');
-            document.body.removeChild(el);
-        }
+        function copyToClipboard() { const el = document.createElement('textarea'); el.value = editor.innerText; document.body.appendChild(el); el.select(); document.execCommand('copy'); document.body.removeChild(el); }
 
-        function getStem(word) {
-            return word.toLowerCase().replace(/(ing|ed|es|ly|s)$/, '').replace(/([aeiou])\1$/, '$1'); 
-        }
+        function getStem(word) { return word.toLowerCase().replace(/(ing|ed|es|ly|s)$/, '').replace(/([aeiou])\1$/, '$1'); }
 
         function analyzeText() {
             const rawText = editor.innerText || "";
             if (!rawText.trim()) return;
 
             const words = rawText.match(/\b\w+\b/g) || [];
-            const wordCount = words.length;
-            const sentenceMatches = rawText.match(/[^.?!]+[.?!]*/g) || [rawText];
-            
             const matchMap = new Map();
             let actualWeaknessCount = 0;
-            let sensoryCount = 0;
+            let positiveCount = 0; // Sensory or Logic Links
 
+            // Merge relevant lists based on mode
+            const activeLists = [...baseLists, ...(currentMode === 'narrative' ? creativeLists : analyticalLists)];
+
+            // 1. Paragraph-Aware Bad Starts (40% Threshold)
             const paragraphs = rawText.split(/\n+/);
-            const badStartCategory = listsData.find(l => l.id === 'badstart');
+            const badStartCategory = activeLists.find(l => l.id === 'badstart');
             const badStartList = new Set(badStartCategory.words.map(w => w.toLowerCase()));
-            
-            let currentParaStartIdx = 0;
+            let currentGlobalIdx = 0;
+
             paragraphs.forEach(para => {
-                if (!para.trim()) { currentParaStartIdx += para.length + 1; return; }
+                if (!para.trim()) { currentGlobalIdx += para.length + 1; return; }
                 const sentences = para.match(/[^.?!]+[.?!]*/g) || [para];
                 let badStartSentences = [];
+                let paraOffset = 0;
                 sentences.forEach(sent => {
                     const firstWordMatch = sent.trim().match(/^\b\w+\b/i);
                     if (firstWordMatch && badStartList.has(firstWordMatch[0].toLowerCase())) {
-                        badStartSentences.push({ index: currentParaStartIdx + sent.indexOf(firstWordMatch[0]), word: firstWordMatch[0], len: firstWordMatch[0].length });
+                        badStartSentences.push({ index: currentGlobalIdx + paraOffset + sent.indexOf(firstWordMatch[0]), word: firstWordMatch[0], len: firstWordMatch[0].length });
                     }
-                    currentParaStartIdx += sent.length;
+                    paraOffset += sent.length;
                 });
                 if (sentences.length > 1 && (badStartSentences.length / sentences.length) >= 0.4) {
                     badStartSentences.forEach(bs => {
@@ -448,24 +401,38 @@
                         actualWeaknessCount++;
                     });
                 }
-                currentParaStartIdx += 1; 
+                currentGlobalIdx += para.length + 1;
             });
 
-            listsData.filter(l => l.id !== 'badstart').forEach(list => {
+            // 2. Fixed Lists
+            activeLists.filter(l => l.id !== 'badstart').forEach(list => {
                 const regex = list.regex || new RegExp(`\\b(${[...list.words].sort((a,b) => b.length - a.length).join('|')})\\b`, 'gi');
                 let m;
                 while ((m = regex.exec(rawText)) !== null) {
                     if (!matchMap.has(m.index)) {
                         matchMap.set(m.index, { len: m[0].length, category: list, rawWord: m[0] });
                         if (list.isWeakness) actualWeaknessCount++;
-                        if (list.id === 'sensory') sensoryCount++;
                     }
                 }
             });
 
+            // 3. Positive Highlights (Sensory or Logic)
+            const logicWords = ["Furthermore", "However", "Consequently", "Therefore", "Moreover", "Conversely", "Additionally", "Significantly", "Primarily", "Ultimately"];
+            const sensoryWords = ["glistened", "thundered", "velvety", "fragrant", "bitter", "shimmered", "roared", "stale"];
+            const targetPositives = currentMode === 'narrative' ? sensoryWords : logicWords;
+            const posRegex = new RegExp(`\\b(${targetPositives.join('|')})\\b`, 'gi');
+            let pm;
+            while ((pm = posRegex.exec(rawText)) !== null) {
+                if (!matchMap.has(pm.index)) {
+                    matchMap.set(pm.index, { len: pm[0].length, category: { class: 'hl-sensory', title: currentMode === 'narrative' ? 'Sensory' : 'Connector', strategy: 'Excellent use of stylistic tools.', fallbackTip: 'Keep it up!' }, rawWord: pm[0] });
+                }
+                positiveCount++;
+            }
+
+            // 4. Repetition
             const stemFreq = {};
             const familyMap = {}; 
-            const stopWords = new Set(["a", "an", "the", "and", "but", "or", "so", "if", "of", "in", "on", "at", "by", "with", "from", "to", "is", "was", "were", "are", "be", "been", "being", "have", "has", "had", "do", "does", "did", "will", "would", "shall", "should", "can", "could", "may", "might", "must", "it", "its", "they", "them", "their", "this", "that", "these", "those", "he", "him", "his", "she", "her", "hers", "we", "us", "our", "ours", "i", "me", "my", "mine", "you", "your", "yours"]);
+            const stopWords = new Set(["a", "an", "the", "and", "but", "or", "so", "if", "of", "in", "on", "at", "by", "with", "from", "to", "is", "was", "were", "are", "be", "been", "have", "had", "it", "he", "she", "they"]);
             words.forEach(w => {
                 const low = w.toLowerCase();
                 if (low.length < 3 || stopWords.has(low)) return;
@@ -474,17 +441,15 @@
                 if (!familyMap[stem]) familyMap[stem] = new Set();
                 familyMap[stem].add(low);
             });
-
-            const tooFrequentStems = Object.keys(stemFreq).filter(s => stemFreq[s] >= 3 || (s.length > 4 && stemFreq[s] >= 2));
-            const wordRegex = /\b\w+\b/gi;
-            let wm;
-            while ((wm = wordRegex.exec(rawText)) !== null) {
-                const stem = getStem(wm[0]);
-                if (tooFrequentStems.includes(stem) && !matchMap.has(wm.index)) {
-                    matchMap.set(wm.index, { len: wm[0].length, rawWord: wm[0], category: { class: 'hl-frequent', title: 'Repetition', strategy: `The word family '${wm[0]}' is used ${stemFreq[stem]} times here.`, fallbackTip: "Try a synonym to keep things fresh.", specificTips: {} } });
+            Object.keys(stemFreq).filter(s => stemFreq[s] >= 3).forEach(stem => {
+                const wordRegex = new RegExp(`\\b\\w*${stem}\\w*\\b`, 'gi');
+                let wm;
+                while ((wm = wordRegex.exec(rawText)) !== null) {
+                    if (!matchMap.has(wm.index)) matchMap.set(wm.index, { len: wm[0].length, rawWord: wm[0], category: { class: 'hl-frequent', title: 'Repetition', strategy: `Word family used ${stemFreq[stem]} times.`, fallbackTip: 'Try a synonym.' } });
                 }
-            }
+            });
 
+            // 5. Reconstruct
             let finalHTML = "";
             let lastIdx = 0;
             Array.from(matchMap.keys()).sort((a, b) => a - b).forEach(idx => {
@@ -492,35 +457,42 @@
                 const data = matchMap.get(idx);
                 finalHTML += rawText.substring(lastIdx, idx).replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
                 const wordKey = data.rawWord.toLowerCase();
-                const specificTip = data.category.specificTips?.[wordKey] || data.category.specificTips?.[getStem(wordKey)] || data.category.fallbackTip || "";
+                let specificTip = data.category.specificTips?.[wordKey] || data.category.fallbackTip || "";
+                if (data.category.id === 'badstart' && currentMode === 'analytical') specificTip = data.category.specificTips.analytical_default;
+                
                 finalHTML += `<span class="hl ${data.category.class}" data-title="${data.category.title}" data-word="${data.rawWord}" data-strategy="${data.category.strategy}" data-example="${specificTip.replace(/\n/g, '\\n')}">${rawText.substring(idx, idx + data.len)}</span>`;
                 lastIdx = idx + data.len;
             });
             finalHTML += rawText.substring(lastIdx).replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
             editor.innerHTML = finalHTML.replace(/\n/g, '<br>');
 
-            updateStats(words, stemFreq, familyMap, sentenceMatches, actualWeaknessCount, sensoryCount);
+            updateStats(words, stemFreq, familyMap, paragraphs, actualWeaknessCount, positiveCount);
             attachTooltipEvents();
         }
 
-        function updateStats(words, stemFreq, familyMap, sentences, weakCount, sensoryCount) {
+        function updateStats(words, stemFreq, familyMap, paras, weakCount, positiveCount) {
             const wc = words.length;
-            const sc = sentences.length;
+            const totalSents = (paras.join('').match(/[^.?!]+[.?!]*/g) || []).length;
             document.getElementById('stat-words').innerText = wc;
-            document.getElementById('sent-total').innerText = sc;
-            document.getElementById('stat-avg').innerText = wc > 0 ? (wc / sc).toFixed(1) : 0;
-            const percent = wc > 0 ? Math.round((weakCount / wc) * 100) : 0;
-            document.getElementById('weak-percent').innerText = percent + "%";
-            document.getElementById('percent-bar').style.width = Math.min(percent, 100) + "%";
-            document.getElementById('grade-level').innerText = `Est. Level: ${Math.min(Math.round((words.filter(w => w.length > 7).length / wc) * 10 + (wc / sc) / 2) + 4, 12) || 0}`;
-            document.getElementById('stat-sensory').innerText = sensoryCount;
-            document.getElementById('stat-unique').innerText = (wc > 0 ? Math.round((new Set(words.map(w => w.toLowerCase())).size / wc) * 100) : 0) + "%";
-            document.getElementById('category-list').innerHTML = listsData.map(l => `<div class="flex justify-between items-center text-[10px] font-black p-4 stat-card rounded-2xl"><span class="${l.color} uppercase tracking-tighter">${l.title}</span><span class="opacity-30 font-bold">${editor.querySelectorAll(`.${l.class}`).length}</span></div>`).join('');
-            let rhythm = {s:0, m:0, l:0};
-            sentences.forEach(s => { const w = (s.match(/\b\w+\b/g) || []).length; if (w <= 10) rhythm.s++; else if (w >= 25) rhythm.l++; else rhythm.m++; });
-            document.getElementById('sent-short').innerText = rhythm.s;
-            document.getElementById('sent-medium').innerText = rhythm.m;
-            document.getElementById('sent-long').innerText = rhythm.l;
+            document.getElementById('sent-total').innerText = totalSents;
+            document.getElementById('stat-avg').innerText = totalSents > 0 ? (wc / totalSents).toFixed(1) : 0;
+            document.getElementById('weak-percent').innerText = wc > 0 ? Math.round((weakCount / wc) * 100) + "%" : "0%";
+            document.getElementById('percent-bar').style.width = Math.min(Math.round((weakCount / wc) * 100), 100) + "%";
+            document.getElementById('stat-dynamic').innerText = positiveCount;
+            const unique = wc > 0 ? Math.round((new Set(words.map(w => w.toLowerCase())).size / wc) * 100) : 0;
+            document.getElementById('stat-unique').innerText = unique + "%";
+            
+            // Unique Flavor Popup Data
+            const uniqueTip = currentMode === 'narrative' 
+                ? "CREATIVE ADVICE: Use specific nouns (not 'tree', but 'oak'). Use vivid verbs (not 'ran', but 'bolted'). Vary your sentence lengths to create rhythm."
+                : "ANALYTICAL ADVICE: Use nominalization (not 'He discovered', but 'The discovery'). Use precise verbs of analysis (illustrates, highlights, juxtaposes, correlates).";
+            document.getElementById('unique-flavor-card').dataset.example = uniqueTip;
+
+            document.getElementById('category-list').innerHTML = [...baseLists, ...(currentMode === 'narrative' ? creativeLists : analyticalLists)].map(l => {
+                const count = editor.querySelectorAll(`.${l.class}`).length;
+                return `<div class="flex justify-between items-center text-[10px] font-black p-4 stat-card rounded-2xl"><span class="${l.color} uppercase tracking-tighter">${l.title}</span><span class="opacity-30 font-bold">${count}</span></div>`;
+            }).join('');
+
             const topFreq = Object.entries(stemFreq).filter(f => f[1] >= 2).sort((a,b) => b[1]-a[1]);
             document.getElementById('freq-words').innerHTML = topFreq.length > 0 ? topFreq.slice(0, 5).map(([s, c]) => `<div class="flex justify-between items-center text-sm border-b border-white/20 pb-3"><div class="flex flex-col"><span class="font-medium italic">${Array.from(familyMap[s]).join(' / ')}</span><span class="text-[8px] opacity-40 uppercase font-black">Family Match</span></div><span class="text-xl font-black opacity-80">${c}x</span></div>`).join('') : `<p class="opacity-70 text-sm italic">Clear as a bell.</p>`;
         }
@@ -529,12 +501,18 @@
             document.querySelectorAll('.hl').forEach(hl => {
                 hl.addEventListener('mouseenter', (e) => {
                     if (!tipsEnabled) return;
+                    const tooltipTitle = document.getElementById('tooltip-title');
+                    const tooltipWord = document.getElementById('tooltip-word');
+                    const tooltipText = document.getElementById('tooltip-text');
+                    const tooltipExample = document.getElementById('tooltip-example');
+                    
                     tooltipTitle.innerText = hl.dataset.title;
                     tooltipWord.innerText = hl.dataset.word;
                     tooltipText.innerText = hl.dataset.strategy;
                     tooltipExample.innerText = hl.dataset.example.replace(/\\n/g, '\n');
                     tooltipExample.style.display = hl.dataset.example ? 'block' : 'none';
                     tooltip.style.display = 'block';
+                    
                     const rect = hl.getBoundingClientRect();
                     let left = rect.left + rect.width / 2 - tooltip.offsetWidth / 2;
                     let top = rect.top + window.scrollY - tooltip.offsetHeight - 20;
@@ -549,7 +527,7 @@
         }
 
         window.onload = () => {
-            editor.innerText = "He walked home. He sat down. He was tired. He decided to sleep. He knew he was late. (This triggers the highlight because it is 100% Noun/Verb starts).\n\nBut here is a paragraph that uses a pronoun properly. He went to the store. After a long walk, he found the bread. He felt happy.";
+            editor.innerText = "I think the character is happy. He decided he was happy, meaning that he felt nice. He would often smile. (Switch to Narrative/Analytical to see the difference!)";
             analyzeText();
         }
     </script>
