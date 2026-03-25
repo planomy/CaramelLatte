@@ -376,46 +376,66 @@
         function escapeRegExp(string) { return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&').replace(/['’]/g, "['’]"); }
 
         function analyzeText() {
-            const rawText = editor.innerText || "";
-            if (!rawText.trim()) { updateStats("", 0); return; }
+            // Standardize newlines from external pastes
+            const textToAnalyze = (editor.innerText || "").replace(/\r\n/g, '\n');
+            if (!textToAnalyze.trim()) { updateStats("", 0); return; }
 
             const matchMap = new Map();
             let weakCount = 0;
             const activeLists = [...baseLists, ...(currentMode === 'analytical' ? analyticalLists : [])];
 
-            const cleanText = rawText.replace(/\r/g, '');
-            const paragraphs = cleanText.split(/\n+/);
-            
-            // 1. Structural Check: Paragraph-Aware Bad Starts
+            // 1. IMPROVED STRUCTURAL CHECK: Paragraph-Aware Bad Starts
             let badStartIndices = new Set();
             let globalIdx = 0;
-            paragraphs.forEach(para => {
-                if (!para.trim()) { globalIdx += para.length + 1; return; }
-                const sentences = para.split(/(?<=[.?!])(?:\s+|\n|$)/).filter(s => s.trim().length > 0);
+            
+            // Split on 2+ newlines to reliably find true paragraphs, keeping separators to maintain exact indices
+            const paragraphsAndSeps = textToAnalyze.split(/(\n{2,})/);
+            
+            paragraphsAndSeps.forEach(part => {
+                if (/^\n+$/.test(part)) {
+                    globalIdx += part.length;
+                    return;
+                }
+                if (!part.trim()) {
+                    globalIdx += part.length;
+                    return;
+                }
+                
+                const para = part;
+                // Split sentences on punctuation followed by whitespace (including soft \n), keeping separators
+                const sentencesAndSeps = para.split(/((?<=[.?!]['"”’)]*)\s+)/);
                 let caught = [];
-                let pOffset = 0;
+                let sOffset = 0;
 
-                sentences.forEach(sent => {
-                    const actualSentStart = para.indexOf(sent, pOffset);
-                    const firstWordMatch = sent.match(/^\s*\b(\w+)\b/i);
+                sentencesAndSeps.forEach(sentOrSep => {
+                    if (/^\s+$/.test(sentOrSep) || !sentOrSep.trim()) {
+                        sOffset += sentOrSep.length;
+                        return;
+                    }
+                    
+                    const sent = sentOrSep;
+                    // Safely find the first word, ignoring leading quotes
+                    const firstWordMatch = sent.match(/^\s*['"”’]*\b(\w+)\b/i);
+                    
                     if (firstWordMatch && new Set(badStartConfig.words.map(w => w.toLowerCase())).has(firstWordMatch[1].toLowerCase())) {
-                        const wordIndex = globalIdx + actualSentStart + firstWordMatch.index + firstWordMatch[0].indexOf(firstWordMatch[1]);
+                        const wordIndex = globalIdx + sOffset + firstWordMatch.index + firstWordMatch[0].indexOf(firstWordMatch[1]);
                         caught.push({ i: wordIndex });
                     }
-                    pOffset = actualSentStart + sent.length;
+                    sOffset += sent.length;
                 });
 
-                if (sentences.length > 1 && (caught.length / sentences.length) >= 0.4) {
+                const sentenceCount = sentencesAndSeps.filter(s => s.trim().length > 0 && !/^\s+$/.test(s)).length;
+                if (sentenceCount > 1 && (caught.length / sentenceCount) >= 0.4) {
                     caught.forEach(c => badStartIndices.add(c.i));
                 }
-                globalIdx += para.length + 1;
+                globalIdx += para.length;
             });
 
-            // 2. High-Density Categorization
+            // 2. HIGH-DENSITY CATEGORIZATION
             activeLists.forEach(list => {
                 const regex = list.regex || new RegExp(`\\b(${[...list.words].sort((a,b) => b.length - a.length).map(escapeRegExp).join('|')})\\b`, 'gi');
                 let m;
-                while ((m = regex.exec(rawText)) !== null) {
+                while ((m = regex.exec(textToAnalyze)) !== null) {
                     if (!matchMap.has(m.index)) {
                         matchMap.set(m.index, { len: m[0].length, category: list, rawWord: m[0], isBadStart: false, isRepetition: false });
                         if (list.isWeakness) weakCount++;
@@ -423,30 +443,31 @@
                 }
             });
 
-            // 3. The Glue Sweep (Fills the gaps)
+            // 3. THE GLUE SWEEP
             const glueRegex = new RegExp(`\\b(${[...glueList.words].sort((a,b) => b.length - a.length).map(escapeRegExp).join('|')})\\b`, 'gi');
             let gm;
-            while ((gm = glueRegex.exec(rawText)) !== null) {
+            while ((gm = glueRegex.exec(textToAnalyze)) !== null) {
                 if (!matchMap.has(gm.index)) {
                     matchMap.set(gm.index, { len: gm[0].length, category: glueList, rawWord: gm[0], isBadStart: false, isRepetition: false });
                     weakCount++;
                 }
             }
 
-            // 4. Repetition Engine
+            // 4. REPETITION ENGINE
             const stemFreq = {};
             const stopWords = new Set(glueList.words);
-            const words = rawText.match(/\b\w+['’]?\w*\b/g) || [];
+            const words = textToAnalyze.match(/\b\w+['’]?\w*\b/g) || [];
             words.forEach(w => {
                 const low = w.toLowerCase();
                 if (low.length < 3 || stopWords.has(low)) return;
                 const stem = getStem(low);
                 stemFreq[stem] = (stemFreq[stem] || 0) + 1;
             });
+            
             Object.keys(stemFreq).filter(s => stemFreq[s] >= 3).forEach(stem => {
                 const wordRegex = new RegExp(`\\b\\w*${stem}\\w*\\b`, 'gi');
                 let wm;
-                while ((wm = wordRegex.exec(rawText)) !== null) {
+                while ((wm = wordRegex.exec(textToAnalyze)) !== null) {
                     if (matchMap.has(wm.index)) {
                         matchMap.get(wm.index).isRepetition = true;
                     } else {
@@ -456,12 +477,12 @@
                 }
             });
 
-            // 5. Apply Structural Bad Starts
+            // 5. APPLY STRUCTURAL BAD STARTS
             badStartIndices.forEach(idx => {
                 if (matchMap.has(idx)) {
                     matchMap.get(idx).isBadStart = true;
                 } else {
-                    const wordMatch = rawText.substring(idx).match(/^\w+/);
+                    const wordMatch = textToAnalyze.substring(idx).match(/^\w+/);
                     if (wordMatch) {
                         matchMap.set(idx, { len: wordMatch[0].length, rawWord: wordMatch[0], isBadStart: true, isRepetition: false, category: badStartConfig });
                         weakCount++;
@@ -469,14 +490,14 @@
                 }
             });
 
-            // 6. Reconstruct HTML
+            // 6. RECONSTRUCT HTML
             let finalHTML = "";
             let lastIdx = 0;
             const sorted = Array.from(matchMap.keys()).sort((a, b) => a - b);
             sorted.forEach(idx => {
                 if (idx < lastIdx) return;
                 const d = matchMap.get(idx);
-                finalHTML += rawText.substring(lastIdx, idx).replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
+                finalHTML += textToAnalyze.substring(lastIdx, idx).replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
                 
                 let classes = d.category.class || "";
                 if (d.isBadStart) classes += " hl-bad-start";
@@ -487,31 +508,33 @@
                 if (!tip && d.isBadStart) tip = currentMode === 'analytical' ? badStartConfig.specificTips.analytical_default : (currentMode === 'persuasive' ? badStartConfig.specificTips.persuasive_default : badStartConfig.specificTips.narrative_default);
                 if (!tip) tip = d.category.fallbackTip || d.category.strategy;
                 
-                finalHTML += `<span class="hl ${classes.trim()}" data-title="${d.category.title}" data-word="${d.rawWord}" data-strategy="${d.category.strategy}" data-example="${tip.replace(/\n/g, '\\n')}">${rawText.substring(idx, idx + d.len)}</span>`;
+                finalHTML += `<span class="hl ${classes.trim()}" data-title="${d.category.title}" data-word="${d.rawWord}" data-strategy="${d.category.strategy}" data-example="${tip.replace(/\n/g, '\\n')}">${textToAnalyze.substring(idx, idx + d.len)}</span>`;
                 lastIdx = idx + d.len;
             });
-            finalHTML += rawText.substring(lastIdx).replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
+            finalHTML += textToAnalyze.substring(lastIdx).replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
             editor.innerHTML = finalHTML.replace(/\n/g, '<br>');
 
-            updateStats(rawText, weakCount);
+            updateStats(textToAnalyze, weakCount);
             attachTooltipEvents();
         }
 
         function updateStats(text, weakCount) {
             const words = text.match(/\b\w+['’]?\w*\b/g) || [];
             const wc = words.length;
-            const totalSents = text.split(/[.?!]+(?:\s+|\n|$)/).filter(s => s.trim().length > 0).length;
+            
+            // True sentence split to ignore soft-returns
+            const sentencesAndSeps = text.split(/((?<=[.?!]['"”’)]*)\s+)/);
+            const actualSentences = sentencesAndSeps.filter(s => s.trim().length > 0 && !/^\s+$/.test(s));
+            const totalSents = actualSentences.length;
             
             document.getElementById('stat-words').innerText = wc;
             document.getElementById('sent-total').innerText = totalSents;
             document.getElementById('stat-avg').innerText = totalSents > 0 ? (wc / totalSents).toFixed(1) : 0;
             
-            // % of text that is weak/glue (The Sea of Color metric)
             const baseWeakness = wc > 0 ? (weakCount / wc) * 100 : 0;
             document.getElementById('weak-percent').innerText = Math.round(baseWeakness) + "%";
             document.getElementById('percent-bar').style.width = Math.min(Math.round(baseWeakness), 100) + "%";
 
-            // Any word left unhighlighted is essentially a Unique/Topic word
             const unique = wc > 0 ? Math.max(0, 100 - Math.round(baseWeakness)) : 0;
             document.getElementById('stat-unique').innerText = unique + "%";
             
@@ -539,22 +562,22 @@
             document.getElementById('freq-words').innerHTML = topFreq.length > 0 ? topFreq.slice(0, 5).map(([s, c]) => `<div class="flex justify-between items-center text-sm border-b border-white/20 pb-2"><span>${s}...</span><span class="text-xl font-black opacity-80">${c}x</span></div>`).join('') : `<p class="opacity-70 text-sm italic">Clear as a bell.</p>`;
             
             let rhythm = {s:0, m:0, l:0};
-            text.split(/[.?!]+(?:\s+|\n|$)/).filter(s => s.trim().length > 0).forEach(s => { const w = (s.match(/\b\w+['’]?\w*\b/g) || []).length; if (w <= 10) rhythm.s++; else if (w >= 25) rhythm.l++; else rhythm.m++; });
+            actualSentences.forEach(s => { 
+                const w = (s.match(/\b\w+['’]?\w*\b/g) || []).length; 
+                if (w > 0 && w <= 10) rhythm.s++; 
+                else if (w >= 25) rhythm.l++; 
+                else if (w > 10) rhythm.m++; 
+            });
             document.getElementById('sent-short').innerText = rhythm.s;
             document.getElementById('sent-medium').innerText = rhythm.m;
             document.getElementById('sent-long').innerText = rhythm.l;
             
-            // Recalibrated Grade Level using Automated Readability Index (ARI) logic
             let gl = 0;
             if (wc > 0 && totalSents > 0) {
                 const chars = words.join('').length;
                 const charsPerWord = chars / wc;
-                // Cap words per sentence at 20 to prevent run-on sentences from artificially inflating the grade level
                 const wordsPerSentence = Math.min((wc / totalSents), 20); 
-                
-                // Standard ARI formula
                 let rawGrade = 4.71 * charsPerWord + 0.5 * wordsPerSentence - 21.43;
-                
                 gl = Math.max(1, Math.min(12, Math.round(rawGrade)));
             }
             document.getElementById('grade-level').innerText = `Level: ${gl}`;
