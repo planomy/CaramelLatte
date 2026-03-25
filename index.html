@@ -355,6 +355,13 @@
         const editor = document.getElementById('editor');
         const tooltip = document.getElementById('tooltip');
 
+        // Force plain text pasting across all browsers
+        editor.addEventListener('paste', function(e) {
+            e.preventDefault();
+            const text = (e.originalEvent || e).clipboardData.getData('text/plain');
+            document.execCommand('insertText', false, text);
+        });
+
         function toggleTips() { tipsEnabled = !tipsEnabled; document.getElementById('tip-toggle').style.opacity = tipsEnabled ? "1" : "0.4"; if (!tipsEnabled) document.getElementById('tooltip').style.display = "none"; }
         function toggleTheme() { document.body.classList.toggle('light-mode'); }
         
