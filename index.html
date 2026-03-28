@@ -1,0 +1,2297 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Student prose refiner — rhythm, vocabulary, and clarity feedback in the browser.">
+    <title>Caramel Latte | Student Prose Refiner</title>
+    <link rel="icon" href="favicon.svg" type="image/svg+xml">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=Instrument+Serif:italic&display=swap');
+        
+        :root {
+            --bg-main: #140f0d;
+            --bg-editor: #1e1815;
+            --bg-sidebar: #191412;
+            --bg-card: #241c19;
+            --text-main: #eaddca;
+            --text-muted: #5c4a40;
+            --border: #2d241f;
+            --accent: #d97706;
+            --analytical-accent: #6366f1;
+            --persuasive-accent: #f43f5e;
+        }
+
+        .light-mode {
+            --bg-main: #fdfaf7;
+            --bg-editor: #ffffff;
+            --bg-sidebar: #f7f1eb;
+            --bg-card: #eee4da;
+            --text-main: #3d2b24;
+            --text-muted: #a38b7e;
+            --border: #e6ddd4;
+            --accent: #b45309;
+        }
+
+        body {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            background-color: var(--bg-main);
+            color: var(--text-main);
+            transition: background-color 0.3s ease, color 0.3s ease;
+        }
+
+        .serif { font-family: 'Instrument Serif', serif; }
+
+        /* Editor highlights only — .hl must not be used on block sidebar cards (inline display caused rectangle artifacts) */
+        #editor .hl {
+            cursor: pointer;
+            transition: all 0.1s ease;
+            padding: 1px 0px;
+            border-radius: 2px;
+            display: inline;
+        }
+        #editor .hl:hover { filter: brightness(1.25); }
+
+        .lab-tip {
+            cursor: help;
+            transition: background-color 0.2s ease, box-shadow 0.2s ease;
+        }
+        .lab-tip:hover {
+            background-color: rgba(255, 255, 255, 0.04);
+        }
+        .light-mode .lab-tip:hover {
+            background-color: rgba(0, 0, 0, 0.04);
+        }
+
+        /* The Macro "Sea of Color" Palette */
+        .hl-glue { background-color: #facc15; color: #000; }        /* Yellow: Stop words, prepositions, pronouns */
+        .hl-passive { background-color: #ef4444; color: #fff; }     /* Red: Weak verbs, passives, utility actions */
+        .hl-filter { background-color: #a855f7; color: #fff; }      /* Purple: Filters (felt, knew, realized) */
+        .hl-basic { background-color: #10b981; color: #fff; }       /* Emerald: Basic words (walk, sad, good, nice) */
+        .hl-adverb { background-color: #991b1b; color: #fff; }      /* Dark Red: Adverbs (telling not showing) */
+        .hl-filler { background-color: #ec4899; color: #fff; }      /* Pink: Intensifiers (very, really, kind of) */
+        .hl-cliche { background-color: #64748b; color: #fff; }      /* Slate: Cliches */
+        .hl-modal { background-color: #06b6d4; color: #000; }       /* Cyan: Modals (could, should, would) */
+        .hl-subjective { background-color: #f43f5e; color: #fff; }  /* Rose: I, me, my (Analytical mode) */
+        .hl-contraction { background-color: #f97316; color: #fff; } /* Orange: Contractions (Analytical) */
+
+        /* Multi-layer Structural Indicators */
+        .hl-bad-start { border-left: 4px solid #3b82f6; padding-left: 3px; }
+        /* Repetition: dotted underline (high specificity so Tailwind/parent .hl rules don’t hide it) */
+        #editor .hl.hl-frequent {
+            border-bottom: 2px dotted var(--accent);
+            padding-bottom: 2px;
+            text-decoration: none;
+        }
+
+        /* Repetition category or per-stem focus: show underline, not weak-verb fill on overlaps */
+        #editor[data-repetition-focus="1"] .hl.hl-passive.hl-frequent {
+            background-color: transparent !important;
+            color: inherit !important;
+        }
+
+        /* Focus one category or one repeat stem: dimmed spans lose fill/underline until focus cleared */
+        #editor .hl.dimmed-focus {
+            background-color: transparent !important;
+            color: inherit !important;
+            border-bottom: none !important;
+            border-left: none !important;
+            padding-left: 0 !important;
+            text-decoration: none !important;
+        }
+
+        #editor {
+            outline: none;
+            min-height: 500px;
+            line-height: 2.2;
+            font-size: 1.25rem;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+            background-color: var(--bg-editor);
+            border: 1px solid var(--border);
+            color: var(--text-main);
+        }
+        
+        #editor:empty:before {
+            content: attr(placeholder);
+            color: var(--text-muted);
+            font-style: italic;
+        }
+
+        .sidebar {
+            background-color: var(--bg-sidebar);
+            border-left: 1px solid var(--border);
+        }
+        .stat-card {
+            background-color: var(--bg-card);
+            border: 1px solid var(--border);
+        }
+
+        #tooltip {
+            position: fixed;
+            z-index: 9999;
+            display: none;
+            width: 500px;
+            max-width: min(500px, calc(100vw - 24px));
+            max-height: min(85vh, 720px);
+            overflow-y: auto;
+            pointer-events: none;
+            box-shadow: 0 25px 50px rgba(0,0,0,0.6);
+            background: var(--bg-card);
+            border: 1px solid var(--accent);
+            color: var(--text-main);
+        }
+
+        /* Momentum scrolling on iPadOS / Safari; standard overflow on other engines */
+        .custom-scrollbar {
+            -webkit-overflow-scrolling: touch;
+        }
+        .custom-scrollbar::-webkit-scrollbar { width: 6px; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: var(--accent); border-radius: 10px; }
+
+        .rhythm-cell { transition: background-color 0.25s ease, border-color 0.25s ease, box-shadow 0.25s ease; }
+        .rhythm-cell.rhythm-warn {
+            background-color: rgba(239, 68, 68, 0.14);
+            border-color: rgba(248, 113, 113, 0.65) !important;
+            box-shadow: 0 0 0 1px rgba(220, 38, 38, 0.45);
+        }
+        .rhythm-cell.rhythm-ok {
+            border-color: rgba(34, 197, 94, 0.55) !important;
+            box-shadow: 0 0 0 1px rgba(22, 163, 74, 0.35);
+        }
+        .light-mode .rhythm-cell.rhythm-warn {
+            background-color: rgba(239, 68, 68, 0.1);
+        }
+        .light-mode .rhythm-cell.rhythm-ok {
+            border-color: rgba(22, 163, 74, 0.65) !important;
+        }
+        /* Lexical variety + Sophisticated: same shell as rhythm cells; green when in band / target met */
+        .stat-card.sidebar-metric {
+            transition: border-color 0.25s ease, box-shadow 0.25s ease;
+        }
+        .stat-card.sidebar-metric.sidebar-metric--ok {
+            border-color: rgba(34, 197, 94, 0.55) !important;
+            box-shadow: 0 0 0 1px rgba(22, 163, 74, 0.35);
+        }
+        .light-mode .stat-card.sidebar-metric.sidebar-metric--ok {
+            border-color: rgba(22, 163, 74, 0.65) !important;
+        }
+        #rhythm-row.rhythm-row-issue {
+            border-radius: 1rem;
+            padding: 0.35rem;
+            margin: -0.35rem;
+            background: rgba(239, 68, 68, 0.06);
+        }
+
+        /* Lab Report: internal scroll + edge affordance (desktop) */
+        #sidebar-scroll {
+            scrollbar-gutter: stable;
+        }
+        .sidebar-scroll-fade {
+            position: absolute;
+            left: 0;
+            right: 0;
+            height: 1.25rem;
+            pointer-events: none;
+            z-index: 25;
+            opacity: 0;
+            transition: opacity 0.22s ease;
+        }
+        .sidebar-scroll-fade--top {
+            top: 5rem;
+            background: linear-gradient(to bottom, var(--bg-sidebar), transparent);
+        }
+        /* No bottom fade: a solid→transparent strip against --bg-sidebar read as a “black bar” over content (e.g. How to fix #3). */
+        #sidebar-scroll:not(.sidebar-scroll--at-top) .sidebar-scroll-fade--top {
+            opacity: 1;
+        }
+        .lab-report-sticky {
+            position: sticky;
+            top: 0;
+            z-index: 30;
+            margin-left: -2rem;
+            margin-right: -2rem;
+            padding-left: 2rem;
+            padding-right: 2rem;
+            padding-top: 0;
+            padding-bottom: 1rem;
+            margin-bottom: 1.5rem;
+            border-bottom: 1px solid var(--border);
+            background: var(--bg-sidebar);
+            background: color-mix(in srgb, var(--bg-sidebar) 92%, transparent);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+        }
+        @media (min-width: 1024px) {
+            .lab-report-sticky {
+                margin-left: -2.5rem;
+                margin-right: -2.5rem;
+                padding-left: 2.5rem;
+                padding-right: 2.5rem;
+            }
+        }
+        .light-mode .lab-report-sticky {
+            background: var(--bg-sidebar);
+            background: color-mix(in srgb, var(--bg-sidebar) 94%, transparent);
+        }
+
+        /* Brew Analysis — cup, drips, steam (~2s) */
+        .brew-btn-wrap {
+            position: relative;
+            display: inline-flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        .brew-vfx {
+            position: absolute;
+            left: 50%;
+            top: calc(100% + 6px);
+            width: 72px;
+            height: 92px;
+            margin-left: -36px;
+            pointer-events: none;
+            opacity: 0;
+            visibility: hidden;
+            z-index: 40;
+        }
+        .brew-vfx--play {
+            visibility: visible;
+            animation: brewVfxContainer 2s ease forwards;
+        }
+        @keyframes brewVfxContainer {
+            0%,
+            4% {
+                opacity: 0;
+            }
+            8%,
+            92% {
+                opacity: 1;
+            }
+            100% {
+                opacity: 0;
+            }
+        }
+        .brew-cup-stack {
+            position: relative;
+            width: 48px;
+            height: 56px;
+            margin: 0 auto;
+        }
+        .brew-cup-svg {
+            position: relative;
+            z-index: 2;
+            display: block;
+            margin: 0 auto;
+            color: #d97706;
+            filter: drop-shadow(0 2px 4px rgba(217, 119, 6, 0.35));
+            transform: translateY(-72px);
+            opacity: 0;
+        }
+        .brew-vfx--play .brew-cup-svg {
+            animation: brewCupDrop 0.45s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+        }
+        @keyframes brewCupDrop {
+            to {
+                transform: translateY(0);
+                opacity: 1;
+            }
+        }
+        /* Horizontal fill: grows left→right as each drip lands */
+        .brew-liquid-track {
+            position: absolute;
+            z-index: 1;
+            left: 10px;
+            right: 10px;
+            bottom: 8px;
+            height: 17px;
+            border-radius: 0 0 7px 7px;
+            overflow: hidden;
+            pointer-events: none;
+        }
+        .brew-liquid-fill {
+            height: 100%;
+            width: 100%;
+            border-radius: 0 0 6px 6px;
+            background: linear-gradient(180deg, #fbbf24 0%, #d97706 55%, #92400e 100%);
+            transform: scaleX(0);
+            transform-origin: left center;
+            will-change: transform;
+        }
+        .brew-vfx--play .brew-liquid-fill {
+            animation: brewFillHorizontal 2s linear forwards;
+        }
+        @keyframes brewFillHorizontal {
+            0%,
+            37% {
+                transform: scaleX(0);
+            }
+            38%,
+            44% {
+                transform: scaleX(0.34);
+            }
+            45%,
+            50% {
+                transform: scaleX(0.34);
+            }
+            51%,
+            56% {
+                transform: scaleX(0.67);
+            }
+            57%,
+            100% {
+                transform: scaleX(1);
+            }
+        }
+        .brew-drips {
+            position: absolute;
+            left: 0;
+            right: 0;
+            top: 0;
+            height: 48px;
+            pointer-events: none;
+            z-index: 4;
+        }
+        .brew-drip {
+            position: absolute;
+            left: 50%;
+            width: 7px;
+            height: 12px;
+            margin-left: -3.5px;
+            border-radius: 50% 50% 45% 45%;
+            background: linear-gradient(180deg, #f59e0b, #b45309);
+            opacity: 0;
+            top: -8px;
+        }
+        .brew-vfx--play .brew-drip--1 {
+            animation: brewDrip 0.38s ease-in forwards;
+            animation-delay: 0.38s;
+            margin-left: -14px;
+        }
+        .brew-vfx--play .brew-drip--2 {
+            animation: brewDrip 0.38s ease-in forwards;
+            animation-delay: 0.52s;
+        }
+        .brew-vfx--play .brew-drip--3 {
+            animation: brewDrip 0.38s ease-in forwards;
+            animation-delay: 0.66s;
+            margin-left: 10px;
+        }
+        @keyframes brewDrip {
+            0% {
+                transform: translateY(0) scaleY(0.6);
+                opacity: 0;
+            }
+            15% {
+                opacity: 1;
+            }
+            100% {
+                transform: translateY(38px) scaleY(1);
+                opacity: 0.85;
+            }
+        }
+        .brew-cup-stack .brew-steam-cloud {
+            position: absolute;
+            left: 50%;
+            bottom: 44px;
+            width: 52px;
+            height: 28px;
+            margin-left: -26px;
+            pointer-events: none;
+            z-index: 3;
+            opacity: 0;
+            filter: drop-shadow(0 1px 2px rgba(255, 255, 255, 0.2));
+        }
+        .brew-vfx--play .brew-steam-cloud {
+            animation: brewCloudFloat 1.45s ease-out forwards;
+            animation-delay: 0.58s;
+        }
+        @keyframes brewCloudFloat {
+            0% {
+                transform: translateY(6px) scale(0.88);
+                opacity: 0;
+            }
+            12% {
+                opacity: 0.88;
+            }
+            100% {
+                transform: translateY(-32px) scale(1.05);
+                opacity: 0;
+            }
+        }
+        .brew-stat-tick {
+            font-variant-numeric: tabular-nums;
+        }
+    </style>
+</head>
+<body class="flex min-h-screen min-h-[100dvh] flex-col overflow-x-hidden lg:h-[100dvh] lg:max-h-[100dvh] lg:overflow-hidden">
+
+    <div id="tooltip" class="p-8 rounded-3xl text-[13px] animate-in fade-in duration-200 shadow-2xl">
+        <div class="flex items-center justify-between mb-4 border-b border-white/10 pb-4">
+            <div>
+                <p id="tooltip-title" class="font-black text-amber-500 uppercase tracking-[0.2em] text-[10px] mb-1"></p>
+                <p id="tooltip-word" class="text-xl font-black italic text-white"></p>
+            </div>
+            <div class="h-10 w-10 rounded-full bg-amber-600/10 flex items-center justify-center">
+                <span class="text-amber-500 font-black font-mono">!</span>
+            </div>
+        </div>
+        <p id="tooltip-text" class="mb-6 opacity-80 leading-relaxed whitespace-pre-line"></p>
+        <div id="tooltip-example" class="space-y-3 bg-black/30 p-5 rounded-2xl border-l-4 border-amber-600 font-medium leading-relaxed whitespace-pre-line text-amber-100/90"></div>
+    </div>
+
+    <div class="caramel-workspace flex min-h-0 flex-1 flex-col lg:flex-row lg:min-h-0 lg:overflow-hidden">
+        <main class="flex min-h-0 w-full flex-col overflow-hidden lg:flex-1 lg:w-[60%] lg:min-h-0 p-6 lg:p-10 xl:p-14">
+            <header class="mb-10 flex flex-col gap-4">
+                <div class="w-full min-w-0">
+                    <h1 class="text-nowrap text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-extrabold tracking-tighter text-amber-600 italic serif leading-[1.05]">Caramel Latte</h1>
+                    <p class="text-nowrap text-[9px] sm:text-[11px] uppercase tracking-[0.12em] sm:tracking-[0.2em] opacity-40 font-black mt-1.5 leading-tight">Mr C's caffeinated writing lab</p>
+                </div>
+                <div class="flex w-full flex-wrap items-center gap-2 sm:justify-end">
+                    <select id="grade-select" onchange="onGradeSelectChange()" class="pl-3 pr-2 py-3 rounded-2xl bg-amber-600/10 hover:bg-amber-600/15 border border-amber-600/25 text-amber-600 text-[11px] font-black cursor-pointer max-w-[6.5rem]" title="Your grade — targets, tips, and when flagged % turns red" aria-label="School grade (2–12). Targets and tips change with grade.">
+                    </select>
+                    <button id="mode-toggle" type="button" onclick="toggleMode()" class="p-4 rounded-2xl bg-amber-600/10 hover:bg-amber-600/20 text-amber-600 transition-all flex items-center justify-center gap-2" title="Switch Genre" aria-label="Switch writing genre: narrative, analytical, or persuasive">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z" />
+                        </svg>
+                        <span id="mode-label" class="text-[10px] font-black uppercase tracking-widest hidden sm:inline">Narrative</span>
+                    </button>
+                    <button id="tip-toggle" type="button" onclick="toggleTips()" class="p-4 rounded-2xl bg-amber-600/10 hover:bg-amber-600/20 text-amber-600 transition-all" title="Toggle Tips" aria-label="Toggle word tips on hover">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z" />
+                        </svg>
+                    </button>
+                    <button type="button" onclick="toggleTheme()" class="p-4 rounded-2xl bg-amber-600/10 hover:bg-amber-600/20 text-amber-600 transition-all" title="Light or dark theme" aria-label="Toggle light or dark theme">
+                        <svg id="theme-icon" xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364-6.364l-.707.707M6.343 17.657l-.707.707m12.728 0l-.707-.707M6.343 6.343l-.707-.707M12 5a7 7 0 100 14 7 7 0 000-14z" />
+                        </svg>
+                    </button>
+                    <div class="flex flex-wrap items-center gap-1.5">
+                        <button type="button" onclick="copyPlainText()" class="px-4 py-4 text-[10px] sm:text-[11px] font-black uppercase tracking-widest border-2 border-amber-600/20 rounded-2xl hover:bg-amber-600/10" title="Plain text only — works in any app." aria-label="Copy draft as plain text without highlights">Copy text</button>
+                        <button type="button" onclick="copyWithHighlights()" class="px-4 py-4 text-[10px] sm:text-[11px] font-black uppercase tracking-widest border-2 border-amber-600/40 rounded-2xl hover:bg-amber-600/15 text-amber-100/95" title="Inline colors for email and Word. If an app strips formatting, use Copy text." aria-label="Copy draft with colored highlights for email or Word">Copy + highlights</button>
+                    </div>
+                    <button type="button" onclick="clearText()" class="px-6 py-4 text-[11px] font-black uppercase tracking-widest border-2 border-red-600/20 rounded-2xl hover:bg-red-600/10 text-red-500/80" title="Clear the editor" aria-label="Clear the editor">Clear</button>
+                    <div class="brew-btn-wrap">
+                        <button type="button" id="brew-btn" onclick="brewAnalyze()" class="px-10 py-4 bg-amber-600 text-white font-black uppercase tracking-widest text-xs rounded-full shadow-xl hover:bg-amber-700 transition-all transform hover:-translate-y-1 disabled:opacity-50 disabled:pointer-events-none">
+                            Brew Analysis
+                        </button>
+                        <div id="brew-vfx" class="brew-vfx" aria-hidden="true">
+                            <div class="brew-cup-stack">
+                                <div class="brew-liquid-track" aria-hidden="true">
+                                    <div class="brew-liquid-fill"></div>
+                                </div>
+                                <svg class="brew-cup-svg" viewBox="0 0 48 56" width="48" height="56" aria-hidden="true">
+                                    <path
+                                        fill="none"
+                                        stroke="currentColor"
+                                        stroke-width="2.25"
+                                        stroke-linecap="round"
+                                        stroke-linejoin="round"
+                                        d="M10 12v32c0 6 5 10 12 10h4c7 0 12-4 12-10V12M10 12h28M8 48h32"
+                                    />
+                                    <path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" d="M38 20c6 0 8 4 8 8s-2 10-8 10" />
+                                </svg>
+                                <svg class="brew-steam-cloud" viewBox="0 0 52 28" width="52" height="28" aria-hidden="true">
+                                    <ellipse cx="26" cy="19" rx="23" ry="7" fill="rgba(255,255,255,0.38)" />
+                                    <circle cx="15" cy="17" r="9" fill="rgba(255,255,255,0.45)" />
+                                    <circle cx="27" cy="16" r="11" fill="rgba(255,255,255,0.5)" />
+                                    <circle cx="39" cy="17" r="8" fill="rgba(255,255,255,0.42)" />
+                                </svg>
+                            </div>
+                            <div class="brew-drips">
+                                <span class="brew-drip brew-drip--1"></span>
+                                <span class="brew-drip brew-drip--2"></span>
+                                <span class="brew-drip brew-drip--3"></span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </header>
+
+            <div class="flex min-h-[min(280px,40vh)] flex-col rounded-[2.5rem] border-4 border-white/5 shadow-2xl overflow-hidden lg:min-h-0 lg:flex-1">
+                <div id="editor" contenteditable="true" spellcheck="false"
+                     class="min-h-[min(500px,50vh)] flex-1 p-10 focus:ring-0 transition-all custom-scrollbar overflow-y-auto lg:min-h-0 lg:flex-1 lg:p-14"
+                     placeholder="Pour your draft here..."></div>
+            </div>
+        </main>
+
+        <aside class="sidebar flex w-full min-h-0 flex-col overflow-hidden lg:min-h-0 lg:w-[40%] lg:max-w-[40%] lg:flex-1">
+            <div id="sidebar-scroll" class="custom-scrollbar relative min-h-0 flex-1 overflow-y-auto overscroll-contain px-8 pb-8 pt-8 lg:min-h-0 lg:px-10 lg:pb-10 lg:pt-10">
+                <div class="sidebar-scroll-fade sidebar-scroll-fade--top" aria-hidden="true"></div>
+                <div class="lab-report-sticky flex items-center justify-between gap-3">
+                    <h2 class="text-xs font-black uppercase tracking-[0.3em] flex min-w-0 items-center gap-3">
+                        <span class="h-3 w-3 shrink-0 rounded-full bg-amber-600 animate-pulse"></span>
+                        <span class="truncate">The Lab Report</span>
+                    </h2>
+                    <span id="grade-level" class="shrink-0 px-4 py-1.5 bg-amber-600/20 text-amber-600 rounded-full text-[10px] font-black uppercase tracking-widest">Level: 0</span>
+                </div>
+
+            <div class="stat-card p-8 rounded-[2rem] mb-6">
+                <div class="grid grid-cols-3 gap-2 mb-8 text-center border-b border-white/5 pb-8">
+                    <div><p class="text-[10px] uppercase font-black mb-2 opacity-50 text-amber-500">Words</p><p id="stat-words" class="brew-stat-tick text-3xl font-black">0</p></div>
+                    <div><p class="text-[10px] uppercase font-black mb-2 opacity-50 text-amber-500">Sentences</p><p id="sent-total" class="brew-stat-tick text-3xl font-black">0</p></div>
+                    <div><p class="text-[10px] uppercase font-black mb-2 opacity-50 text-amber-500">Avg Len</p><p id="stat-avg" class="brew-stat-tick text-3xl font-black font-mono">0</p></div>
+                </div>
+                <div class="flex gap-4 text-center" id="rhythm-row">
+                    <div id="rhythm-cell-short" class="rhythm-cell lab-tip flex-1 bg-white/5 p-4 rounded-2xl border border-white/5"><p class="text-[9px] uppercase font-black opacity-40 mb-1">Short</p><p id="sent-short" class="brew-stat-tick text-base font-black">0</p><p class="text-[8px] opacity-30 mt-1 font-bold">≤10 wds</p></div>
+                    <div id="rhythm-cell-medium" class="rhythm-cell lab-tip flex-1 bg-white/5 p-4 rounded-2xl border border-white/5"><p class="text-[9px] uppercase font-black opacity-40 mb-1">Medium</p><p id="sent-medium" class="brew-stat-tick text-base font-black">0</p><p class="text-[8px] opacity-30 mt-1 font-bold">11–24</p></div>
+                    <div id="rhythm-cell-long" class="rhythm-cell lab-tip flex-1 bg-white/5 p-4 rounded-2xl border border-white/5"><p class="text-[9px] uppercase font-black opacity-40 mb-1">Long</p><p id="sent-long" class="brew-stat-tick text-base font-black">0</p><p class="text-[8px] opacity-30 mt-1 font-bold">≥25 wds</p></div>
+                </div>
+            </div>
+
+            <div id="flagged-meter-card" class="lab-tip mb-6 bg-amber-600/5 p-8 rounded-[2rem] border-2 border-amber-600/10">
+                <div class="flex justify-between items-start gap-4 mb-4">
+                    <div class="min-w-0 flex flex-wrap items-baseline gap-x-3 gap-y-1">
+                        <p id="meter-label" class="text-xs font-black uppercase tracking-widest opacity-80">Flagged words</p>
+                        <p id="flagged-grade-target" class="text-[10px] font-black uppercase tracking-widest opacity-55">Grade 8 target 42%</p>
+                    </div>
+                    <p id="weak-percent" class="brew-stat-tick text-5xl font-black text-amber-600 shrink-0 leading-none">0%</p>
+                </div>
+                <p id="flagged-meter-sub" class="text-[9px] opacity-50 mb-3 font-bold uppercase tracking-wider">Hover for guide · pick grade in toolbar · red if above target · not a grade</p>
+                <div class="h-4 w-full bg-black/20 rounded-full overflow-hidden">
+                    <div id="percent-bar" class="h-full bg-gradient-to-r from-amber-500 to-red-600 transition-all duration-1000" style="width: 0%"></div>
+                </div>
+            </div>
+
+            <div id="how-to-fix-card" class="stat-card p-8 rounded-[2rem] mb-6 border border-amber-600/15 shadow-lg shadow-amber-950/20" aria-live="polite">
+                <div class="flex items-baseline justify-between gap-3 mb-5">
+                    <h3 class="text-[10px] font-black uppercase tracking-[0.2em] text-amber-500/90">How to fix</h3>
+                    <span class="text-[9px] font-bold uppercase tracking-widest opacity-40">Top 3 priorities</span>
+                </div>
+                <div id="how-to-fix-list" class="space-y-4"></div>
+            </div>
+
+            <div class="grid grid-cols-1 gap-3 mb-6">
+                <div class="bg-amber-600 p-6 rounded-3xl text-white shadow-2xl flex flex-col">
+                    <h3 class="text-[10px] font-black mb-3 uppercase tracking-[0.2em] opacity-70">Repeats</h3>
+                    <div id="freq-words" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2 overflow-hidden flex-grow auto-rows-min">
+                        <p class="opacity-60 italic text-xs col-span-full">Clear.</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-2 xl:grid-cols-3 gap-3 mb-6" id="category-list"></div>
+
+            <div class="grid grid-cols-2 gap-3 mb-6">
+                <div id="ttr-card" class="stat-card sidebar-metric flex flex-col items-center bg-white/5 p-4 rounded-2xl border border-white/5" title="TTR = unique word types ÷ total words. Short drafts can look artificially high.">
+                    <p class="text-[10px] font-black uppercase tracking-widest opacity-50 mb-2">Lexical variety (TTR)</p>
+                    <p id="stat-ttr" class="brew-stat-tick text-2xl font-black text-emerald-500">0%</p>
+                    <p class="text-[9px] opacity-40 mt-2 text-center leading-snug">Unique types ÷ total words</p>
+                    <p id="ttr-grade-guide" class="text-[9px] mt-2 text-center leading-snug font-bold text-emerald-600/85"></p>
+                </div>
+                <div id="soph-card" class="stat-card sidebar-metric flex flex-col items-center bg-white/5 p-4 rounded-2xl border border-white/5" title="Estimate only: tier-2 lexicon + long non-glue words. Not an official NAPLAN score.">
+                    <p class="text-[10px] font-black uppercase tracking-widest opacity-50 mb-2">Sophisticated (est.)</p>
+                    <p id="soph-value-row" class="text-2xl font-black text-violet-400"><span id="stat-soph" class="brew-stat-tick">0</span><span class="text-sm font-bold opacity-60"> / 10</span></p>
+                    <p class="text-[9px] opacity-40 mt-2 text-center leading-snug">Distinct strong words · practice target ≥10</p>
+                </div>
+            </div>
+            </div>
+        </aside>
+    </div>
+
+    <footer class="w-full shrink-0 py-5 border-t border-white/5 text-center bg-[var(--bg-main)]">
+        <p class="text-[10px] font-black uppercase tracking-[0.6em] mb-1 opacity-30">Finely Crafted</p>
+        <p class="text-[9px] sm:text-[10px] font-black uppercase tracking-[0.28em] text-amber-600/75 mb-2 px-4">All your work remains private</p>
+        <p class="text-[9px] font-bold tracking-[0.2em] opacity-30">&copy; COPYRIGHT 2026 NIC COMINO. ALL RIGHTS RESERVED.</p>
+    </footer>
+
+    <div id="copy-toast" role="status" aria-live="polite" aria-atomic="true" class="pointer-events-none fixed bottom-6 left-1/2 z-[200] -translate-x-1/2 translate-y-4 opacity-0 transition-all duration-300 ease-out px-5 py-3 rounded-2xl text-[11px] font-black uppercase tracking-widest shadow-2xl max-w-[min(92vw,22rem)] text-center border border-amber-600/35 bg-[var(--bg-card)] text-amber-100/95"></div>
+
+    <script src="examples.js"></script>
+    <script src="clipboard-export.js"></script>
+    <script>
+        let tipsEnabled = true;
+        let currentMode = 'narrative';
+        /** School grade 2–12: drives targets, tooltip bands, rhythm copy, and worked-example level (2–6 → junior, 7–12 → senior in examples.js). */
+        let selectedGrade = 8;
+        try {
+            const sg = localStorage.getItem('caramel-selected-grade');
+            if (sg != null) {
+                const n = parseInt(sg, 10);
+                if (n >= 2 && n <= 12) selectedGrade = n;
+            } else {
+                const legacy = localStorage.getItem('caramel-example-level');
+                if (legacy === 'junior' || legacy === 'primary') selectedGrade = 4;
+                else if (legacy === 'senior') selectedGrade = 9;
+            }
+        } catch (e) {}
+
+        function exampleLevelForLab() {
+            return selectedGrade <= 6 ? 'junior' : 'senior';
+        }
+        let tipStore = [];
+        function pushTip(obj) {
+            tipStore.push(obj);
+            return tipStore.length - 1;
+        }
+
+        // 1. Structural Config (Used for border logic, not background color)
+        const badStartConfig = {
+            id: 'badstart',
+            title: "Opening Variety",
+            class: "hl-bad-start",
+            words: ["The", "It", "A", "An", "He", "She", "His", "Her", "This", "These", "Those", "They", "There", "Then", "I", "My", "We", "Suddenly"],
+            strategy: "More than 40% of your sentences start with these generic words. Break the cycle.",
+            specificTips: {
+                "narrative_default": "Try a WHERE start: 'Beside the road, a lone tree stood.'\nTry a WHEN start: 'During the storm, the power failed.'",
+                "analytical_default": "In Essays, use Logical Connectives: 'Furthermore, the evidence shows...' or 'Conversely...'",
+                "persuasive_default": "Use Rhetorical Hooks: 'How can we ignore...?' or 'Imagine a world where...'"
+            }
+        };
+
+        // 2. The Universal Weakness Engine
+        const baseLists = [
+            {
+                id: 'weak_verbs',
+                title: "Weak Verb",
+                class: "hl-passive", // Red
+                color: "text-red-500",
+                isWeakness: true,
+                words: [
+                    "am", "is", "are", "was", "were", "be", "being", "been", "have", "has", "had", "having", 
+                    "do", "does", "did", "doing", "done", "get", "gets", "got", "getting", "gotten", 
+                    "go", "goes", "going", "went", "gone", "make", "makes", "making", "made", 
+                    "take", "takes", "taking", "took", "taken", "come", "comes", "coming", "came", 
+                    "put", "puts", "putting", "seem", "seems", "seemed", "seeming", "look", "looks", "looked", "looking", 
+                    "appear", "appears", "appeared", "appearing", "find", "finds", "found", "finding", 
+                    "want", "wants", "wanted", "wanting", "need", "needs", "needed", "needing", 
+                    "use", "uses", "used", "using", "try", "tries", "tried", "trying", "let", "lets", "letting", 
+                    "keep", "keeps", "kept", "keeping", "help", "helps", "helped", "helping", "show", "shows", "showed", "showing", 
+                    "didn't", "don't", "doesn't", "isn't", "aren't", "wasn't", "weren't", "hasn't", "haven't", "hadn't", "can't", "cannot", "won't", "wouldn't", "couldn't", "shouldn't", "ain't",
+                    "i'm", "you're", "he's", "she's", "it's", "we're", "they're", "i've", "you've", "we've", "they've", "i'd", "you'd", "he'd", "she'd", "we'd", "they'd", "that's", "there's", "what's", "who's", "where's", "how's"
+                ],
+                strategy: "Utility verbs and contractions act as weak placeholders. Replace them with vivid, specific actions to boost energy.",
+                fallbackTip: "Weak: 'He got angry.'\nStrong: 'Fury bubbled inside him.'",
+                specificTips: {
+                    "went": "Weak: 'He went home.'\nStrong: 'He retreated to his sanctuary.'",
+                    "got": "Weak: 'He got an idea.'\nStrong: 'An idea sparked in his mind.'"
+                }
+            },
+            {
+                id: 'filler',
+                title: "Filler",
+                class: "hl-filler", // Pink
+                color: "text-pink-500",
+                isWeakness: true,
+                words: ["very", "really", "just", "quite", "too", "actually", "basically", "totally", "definitely", "literally", "simply", "truly", "extremely", "somewhat", "rather", "pretty", "highly", "bit", "a bit", "kind of", "sort of", "slightly", "absolutely", "completely", "a lot", "lots", "lot", "little", "much"],
+                strategy: "Intensifiers and vague quantities are 'empty' modifiers. Remove them or find a more powerful root word.",
+                fallbackTip: "Weak: 'Very hot.'\nStrong: 'Sweltering.'"
+            },
+            {
+                id: 'filter',
+                title: "Filter",
+                class: "hl-filter", // Purple
+                color: "text-purple-500",
+                isWeakness: true,
+                words: ["think", "thought", "believe", "feel", "felt", "notice", "noticed", "decide", "know", "knew", "see", "saw", "wonder", "hear", "heard", "realize", "realized", "decided", "understand", "understood", "remember", "remembered", "wondered"],
+                strategy: "Filters put a barrier between the reader and the action. Delete the filter to submerge the reader.",
+                specificTips: { "saw": "Weak: 'I saw the dragon roar.'\nStrong: 'The dragon roared, shaking the loose stones.'" }
+            },
+            {
+                id: 'basic',
+                title: "Basic Word",
+                class: "hl-basic", // Emerald
+                color: "text-emerald-500",
+                isWeakness: true,
+                words: ["nice", "good", "bad", "big", "small", "fun", "stuff", "thing", "things", "walk", "walks", "walked", "walking", "run", "runs", "ran", "running", "say", "says", "said", "saying", "happy", "sad", "scared", "angry", "mad", "glad", "fast", "slow", "loud", "quiet", "hard", "easy", "hot", "cold", "old", "new", "long", "short", "great", "awesome", "cool", "terrible", "horrible", "people", "person", "guy", "girl", "boy", "man", "woman", "kid", "kids", "child", "children"],
+                strategy: "Common vocabulary lacks flavor. Upgrade to precise, specific terminology to paint a clearer picture.",
+                specificTips: {
+                    "said": "Try: Whispered, barked, admitted, blurted, groaned.",
+                    "walked": "Try: Stumbled, strutted, crept, lumbered, marched.",
+                    "big": "Try: Towering, vast, hulking, colossal, gargantuan.",
+                    "scared": "Show it: Heart hammering, cold sweat, knees trembling."
+                }
+            },
+            {
+                id: 'modal',
+                title: "Modality & Habit",
+                class: "hl-modal", // Cyan
+                color: "text-cyan-500",
+                isWeakness: true,
+                words: ["would", "could", "should", "might", "may", "can", "shall", "will", "must", "maybe", "perhaps", "possibly", "probably", "likely", "started to", "began to", "proceeded to", "meaning that"],
+                strategy: "These words soften your statement, hesitate, or create narrative 'lag'.",
+                fallbackTip: "Jump straight into the action or use absolute certainty."
+            },
+            {
+                id: 'adverb',
+                title: "Adverb",
+                class: "hl-adverb", // Dark Red
+                color: "text-red-800",
+                isWeakness: true,
+                regex: /\b(?!(Sally|Lily|Italy|family|only|silly|holy|belly|lovely|lonely|friendly|chilly|daily|early|butterfly|rely|apply|comply|supply|reply)\b)\w+ly\b/gi,
+                strategy: "Adverbs usually 'tell' instead of 'show', or try to fix a weak verb. Find a powerful verb instead."
+            },
+            {
+                id: 'cliche',
+                title: "Cliché",
+                class: "hl-cliche", // Slate
+                color: "text-slate-500",
+                isWeakness: true,
+                words: ["cold as ice", "piece of cake", "quiet as a mouse", "at the end of the day", "avoid like the plague", "break the ice", "light as a feather", "red as a beet", "scared to death"],
+                strategy: "Clichés lose impact. Invent an original comparison for your specific story."
+            }
+        ];
+
+        const analyticalLists = [
+            { id: 'subjective', title: "Subjectivity", class: "hl-subjective", color: "text-rose-500", isWeakness: true, words: ["I", "me", "my", "mine", "we", "us", "our", "ours", "you", "your", "yours"], strategy: "Analytical writing should be objective. Remove self-references to sound authoritative." }
+        ];
+
+        // The Ultimate Glue List (Catches everything else structural)
+        const glueList = {
+            id: 'glue',
+            title: "Glue Word",
+            class: "hl-glue", // Yellow
+            color: "text-yellow-400",
+            isWeakness: true,
+            words: [
+                "a", "an", "the", "and", "but", "or", "for", "nor", "so", "yet", "if", "because", "since", "unless", "although", "though", "while", "whilst", 
+                "of", "in", "on", "at", "by", "with", "from", "to", "about", "into", "onto", "upon", "out", "over", "under", "above", "below", "behind", "beside", "beyond", "during", "through", "throughout", "toward", "towards", "within", "without", "up", "down", "off", "near", "after", "before", "until", "till", "once", "back", "front", "top", "bottom", "side", "here", "there", "then", "now", 
+                "this", "that", "these", "those", "which", "who", "whom", "whose", "it", "its", "he", "him", "his", "she", "her", "hers", "they", "them", "their", "theirs", "we", "us", "our", "ours", "i", "me", "my", "mine", "you", "your", "yours", "what", "whatever", "whoever", "whomever", "whichever", "wherever", "whenever", "however", 
+                "each", "every", "many", "much", "some", "any", "no", "not", "all", "none", "few", "several", "most", "other", "another", "such", "same", "own", "anything", "everything", "something", "nothing", "anyone", "everyone", "someone", "no one", "anybody", "everybody", "somebody", "nobody", "anywhere", "everywhere", "somewhere", "nowhere", 
+                "also", "only", "enough", "both", "neither", "either", "whether", "always", "never", "sometimes", "often", "usually", "seldom", "rarely", "soon", "already", "still", "even", "next", "last", "first", "second", "third", "final", "finally", "almost", "else", "instead", "anyway", "yes", "yeah", "ok", "okay", "oh", "ah", "well", "wow", "like", "as", "than", "away"
+            ],
+            strategy: "These are 'glue' words. They hold sentences together but don't carry meaning.",
+            fallbackTip: "Too many make your writing slow and 'sticky'. Combine ideas or use complex nouns to eliminate filler."
+        };
+
+        /** Sidebar row for dotted repetition underlines (same class as engine: `hl-frequent`). */
+        const repetitionCategoryEntry = {
+            id: 'repetition',
+            title: 'Repetition',
+            class: 'hl-frequent',
+            color: 'text-orange-400'
+        };
+
+        /** Sidebar “focus” maps category id → primary highlight class on `.hl` spans */
+        const CATEGORY_FOCUS_CLASS = {
+            weak_verbs: 'hl-passive',
+            filler: 'hl-filler',
+            filter: 'hl-filter',
+            basic: 'hl-basic',
+            modal: 'hl-modal',
+            adverb: 'hl-adverb',
+            cliche: 'hl-cliche',
+            subjective: 'hl-subjective',
+            badstart: 'hl-bad-start',
+            glue: 'hl-glue',
+            repetition: 'hl-frequent'
+        };
+        let focusedCategoryId = null;
+        /** When set, only spans with matching `data-repeat-stem` stay highlighted (toggle off by clicking again). */
+        let focusedRepeatStem = null;
+
+        function escapeHtmlAttr(s) {
+            return String(s).replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;');
+        }
+
+        function syncFreqChipRows() {
+            const wrap = document.getElementById('freq-words');
+            if (!wrap) return;
+            wrap.querySelectorAll('[data-repeat-stem]').forEach((el) => {
+                const stem = el.getAttribute('data-repeat-stem');
+                const active = stem === focusedRepeatStem;
+                el.setAttribute('aria-pressed', active ? 'true' : 'false');
+                el.classList.toggle('ring-2', active);
+                el.classList.toggle('ring-orange-500/50', active);
+                el.classList.toggle('bg-orange-500/15', active);
+                el.classList.toggle('border-orange-500/40', active);
+                el.classList.toggle('bg-white/10', !active);
+                el.classList.toggle('border-white/10', !active);
+            });
+        }
+
+        function syncCategoryFocusHighlights() {
+            const ed = document.getElementById('editor');
+            if (focusedRepeatStem) {
+                const stemOk = [...ed.querySelectorAll('[data-repeat-stem]')].some(
+                    (el) => el.getAttribute('data-repeat-stem') === focusedRepeatStem
+                );
+                if (!stemOk) focusedRepeatStem = null;
+            }
+            if (!focusedCategoryId && !focusedRepeatStem) {
+                ed.removeAttribute('data-repetition-focus');
+                ed.querySelectorAll('.hl.dimmed-focus').forEach((hl) => hl.classList.remove('dimmed-focus'));
+            } else if (focusedRepeatStem) {
+                ed.setAttribute('data-repetition-focus', '1');
+                ed.querySelectorAll('.hl').forEach((hl) => {
+                    const rs = hl.getAttribute('data-repeat-stem');
+                    const keep = rs === focusedRepeatStem;
+                    hl.classList.toggle('dimmed-focus', !keep);
+                });
+            } else {
+                const fc = CATEGORY_FOCUS_CLASS[focusedCategoryId];
+                if (!fc) {
+                    focusedCategoryId = null;
+                    ed.removeAttribute('data-repetition-focus');
+                    ed.querySelectorAll('.hl.dimmed-focus').forEach((hl) => hl.classList.remove('dimmed-focus'));
+                } else {
+                    ed.setAttribute('data-repetition-focus', focusedCategoryId === 'repetition' ? '1' : '');
+                    ed.querySelectorAll('.hl').forEach((hl) => {
+                        hl.classList.toggle('dimmed-focus', !hl.classList.contains(fc));
+                    });
+                }
+            }
+            syncFreqChipRows();
+        }
+
+        function syncCategoryFocusRows() {
+            document.querySelectorAll('#category-list [data-category-id]').forEach((el) => {
+                const active = el.dataset.categoryId === focusedCategoryId;
+                el.setAttribute('aria-pressed', active ? 'true' : 'false');
+                el.classList.toggle('ring-2', active);
+                el.classList.toggle('ring-amber-500/45', active);
+                el.classList.toggle('bg-amber-500/10', active);
+            });
+        }
+
+        function bindCategoryFocusOnce() {
+            const list = document.getElementById('category-list');
+            if (!list || list.dataset.categoryFocusBound) return;
+            list.dataset.categoryFocusBound = '1';
+            list.addEventListener('click', (e) => {
+                const row = e.target.closest('[data-category-id]');
+                if (!row) return;
+                const id = row.dataset.categoryId;
+                focusedCategoryId = focusedCategoryId === id ? null : id;
+                focusedRepeatStem = null;
+                syncCategoryFocusHighlights();
+                syncCategoryFocusRows();
+            });
+            list.addEventListener('keydown', (e) => {
+                if (e.key !== 'Enter' && e.key !== ' ') return;
+                const row = e.target.closest('[data-category-id]');
+                if (!row) return;
+                e.preventDefault();
+                row.click();
+            });
+        }
+
+        function bindRepeatStemFocusOnce() {
+            const ed = document.getElementById('editor');
+            if (!ed || ed.dataset.repeatStemBound) return;
+            ed.dataset.repeatStemBound = '1';
+            ed.addEventListener('click', (e) => {
+                const el = e.target.closest('[data-repeat-stem]');
+                if (!el) return;
+                const stem = el.getAttribute('data-repeat-stem');
+                if (stem == null || stem === '') return;
+                e.preventDefault();
+                e.stopPropagation();
+                focusedRepeatStem = focusedRepeatStem === stem ? null : stem;
+                if (focusedRepeatStem) focusedCategoryId = null;
+                syncCategoryFocusHighlights();
+                syncCategoryFocusRows();
+            });
+        }
+
+        function bindFreqWordChipsOnce() {
+            const wrap = document.getElementById('freq-words');
+            if (!wrap || wrap.dataset.freqStemBound) return;
+            wrap.dataset.freqStemBound = '1';
+            wrap.addEventListener('click', (e) => {
+                const row = e.target.closest('[data-repeat-stem]');
+                if (!row) return;
+                const stem = row.getAttribute('data-repeat-stem');
+                if (stem == null || stem === '') return;
+                e.preventDefault();
+                e.stopPropagation();
+                focusedRepeatStem = focusedRepeatStem === stem ? null : stem;
+                if (focusedRepeatStem) focusedCategoryId = null;
+                syncCategoryFocusHighlights();
+                syncCategoryFocusRows();
+            });
+            wrap.addEventListener('keydown', (e) => {
+                if (e.key !== 'Enter' && e.key !== ' ') return;
+                const row = e.target.closest('[data-repeat-stem]');
+                if (!row) return;
+                e.preventDefault();
+                row.click();
+            });
+        }
+
+        const editor = document.getElementById('editor');
+        const tooltip = document.getElementById('tooltip');
+
+        // Force plain text pasting across all browsers
+        editor.addEventListener('paste', function(e) {
+            e.preventDefault();
+            const text = (e.originalEvent || e).clipboardData.getData('text/plain');
+            document.execCommand('insertText', false, text);
+        });
+
+        function toggleTips() { tipsEnabled = !tipsEnabled; document.getElementById('tip-toggle').style.opacity = tipsEnabled ? "1" : "0.4"; if (!tipsEnabled) document.getElementById('tooltip').style.display = "none"; }
+        function populateGradeSelect() {
+            const sel = document.getElementById('grade-select');
+            if (!sel) return;
+            sel.innerHTML = '';
+            for (let g = 2; g <= 12; g++) {
+                const opt = document.createElement('option');
+                opt.value = String(g);
+                opt.textContent = `Grade ${g}`;
+                sel.appendChild(opt);
+            }
+            sel.value = String(selectedGrade);
+        }
+
+        function onGradeSelectChange() {
+            const sel = document.getElementById('grade-select');
+            if (!sel) return;
+            const n = parseInt(sel.value, 10);
+            if (n >= 2 && n <= 12) {
+                selectedGrade = n;
+                try {
+                    localStorage.setItem('caramel-selected-grade', String(selectedGrade));
+                } catch (e) {}
+                analyzeText();
+            }
+        }
+
+        function syncGradeSelectUI() {
+            populateGradeSelect();
+            const sel = document.getElementById('grade-select');
+            if (sel) sel.value = String(selectedGrade);
+        }
+        function toggleTheme() { document.body.classList.toggle('light-mode'); }
+        
+        function toggleMode() {
+            const modes = ['narrative', 'analytical', 'persuasive'];
+            currentMode = modes[(modes.indexOf(currentMode) + 1) % modes.length];
+            document.getElementById('mode-label').innerText = currentMode.charAt(0).toUpperCase() + currentMode.slice(1);
+            analyzeText();
+        }
+
+        function clearText() {
+            document.getElementById('editor').innerHTML = "";
+            analyzeText();
+        }
+
+        /** Rough stem for repetition grouping. Trailing `s` alone is not stripped (so "was" stays "was", not "wa"). */
+        function getStem(word) {
+            const low = word.toLowerCase();
+            let w = low.replace(/(ing|ed|es|ly)$/, '').replace(/([aeiou])\1$/, '$1');
+            /* "king"/"thing"/"string" end in "ing" but are not -ing inflections; stripping left "k"/"th"/"str" and broke counts + regex. */
+            if (w.length < 3) {
+                w = low.replace(/([aeiou])\1$/, '$1');
+            }
+            if (w.length < 2 || !w.endsWith('s')) return w;
+            if (w.length >= 2 && w[w.length - 2] === 's') return w;
+            const noStripFinalS = new Set([
+                'was', 'is', 'his', 'has', 'this', 'its', 'gas', 'bus', 'yes', 'us', 'as', 'pus', 'thus', 'plus', 'minus', 'opus'
+            ]);
+            if (noStripFinalS.has(w)) return w;
+            return w.slice(0, -1);
+        }
+
+        /** Most common surface form in `words` for this stem (what readers see / what underlines target). */
+        function mostCommonSurfaceFormForStem(stem, words, stopWords) {
+            const counts = {};
+            words.forEach((raw) => {
+                const low = raw.toLowerCase();
+                if (low.length < 3 || stopWords.has(low)) return;
+                if (getStem(low) !== stem) return;
+                counts[low] = (counts[low] || 0) + 1;
+            });
+            let best = stem;
+            let bestN = 0;
+            Object.entries(counts).forEach(([form, n]) => {
+                if (n > bestN) {
+                    bestN = n;
+                    best = form;
+                }
+            });
+            return best;
+        }
+
+        function escapeRegExp(string) { return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&').replace(/['’]/g, "['’]"); }
+
+        function schoolPhaseFromGrade(gl) {
+            if (gl <= 0) return 'general';
+            if (gl <= 3) return 'lowerPrimary';
+            if (gl <= 6) return 'upperPrimary';
+            if (gl <= 9) return 'lowerSecondary';
+            return 'upperSecondary';
+        }
+
+        /** Rough target mix (coded in evaluateRhythmVariety): medium ≥40%, long ≤35%, short ≥5% when sentence count ≥8; at least one short line when count ≥6. Phase × genre blurbs refine this. */
+        function buildRhythmTargetsBlurb(phase, mode) {
+            if (phase === 'general') {
+                return 'Paste more text so Level can be estimated. Balanced drafts: about 40%+ medium sentences, long lines about 35% or fewer, short lines about 5%+ (or at least one short sentence in longer pieces). Then adjust for your task.';
+            }
+            const T = {
+                lowerPrimary: {
+                    narrative: 'F–3 narrative: picture-book and early story drafts often lean short + medium; long is optional. With 4+ sentences, use at least two length types. If one type is more than about 80–85% of sentences, try a different length for one or two lines.',
+                    persuasive: 'F–3 persuasive: reasons usually sit in short or medium lines. With 4+ sentences, aim for two length types; one type over ~82% is a nudge to vary.',
+                    analytical: 'F–3 explaining/analytical: observations in short + medium; long is optional. Same: two length types when you have 4+ sentences; avoid one bucket over ~82%.'
+                },
+                upperPrimary: {
+                    narrative: 'Years 4–6 narrative: medium often carries the story; short for pace; some long for description. With 4+ sentences, two or three length types; if one bucket is above ~75–78%, add another beat.',
+                    persuasive: 'Years 4–6 persuasive: medium for claims; short for punch; longer lines for a reason. By ~10 sentences, aim for three lengths when the task allows.',
+                    analytical: 'Years 4–6 analytical: more medium and long as evidence grows. With 10+ sentences, include at least one long sentence that unpacks an idea and at least one short line for clarity; keep any one bucket under ~75%.'
+                },
+                lowerSecondary: {
+                    narrative: 'Years 7–9 narrative: deliberate rhythm—short beats, medium narration, selective long. If one length is more than ~70–72% of sentences, revise.',
+                    persuasive: 'Years 7–9 persuasive: paragraphs often mix medium + long; still add short topic or punch lines. Same dominance band ~70–72%.',
+                    analytical: 'Years 7–9 analytical: longer chains are normal. With 10+ sentences, include at least one long sentence and spread across at least two buckets; dominance over ~70% in one bucket is a warning.'
+                },
+                upperSecondary: {
+                    narrative: 'Years 10–12 narrative: voice and genre may bend rules, but variety still helps readers. In drafts of 10+ sentences, aim for three lengths when it fits the piece; one bucket over ~65–72% (use the higher end only for deliberate voice).',
+                    persuasive: 'Years 10–12 persuasive: balance short impact with longer warrants. Substantial drafts often need three lengths; dominance over ~65–68% in one bucket is worth revisiting.',
+                    analytical: 'Years 10–12 analytical: many long sentences are expected; you still need short lines for precision and usually three active buckets in answers of 12+ sentences. Flag if one length is over ~65–68% or there is no long sentence in a long response.'
+                }
+            };
+            const mixLine =
+                'Coded mix (this app): medium ≥40% of sentences, long share ≤35%, short share ≈5%+ (and at least one short sentence once you have 6+). ';
+            return mixLine + T[phase][mode];
+        }
+
+        function evaluateRhythmVariety(rhythm, totalSents, phase, mode) {
+            const s = rhythm.s;
+            const m = rhythm.m;
+            const l = rhythm.l;
+            const spread = (s > 0 ? 1 : 0) + (m > 0 ? 1 : 0) + (l > 0 ? 1 : 0);
+            let dominantKey = 'm';
+            let maxR = m;
+            if (s > maxR) {
+                maxR = s;
+                dominantKey = 's';
+            }
+            if (l > maxR) {
+                maxR = l;
+                dominantKey = 'l';
+            }
+            const dominance = totalSents > 0 ? maxR / totalSents : 0;
+
+            const ps = totalSents > 0 ? s / totalSents : 0;
+            const pm = totalSents > 0 ? m / totalSents : 0;
+            const pl = totalSents > 0 ? l / totalSents : 0;
+
+            /** Ideal school-prose shape: medium is usually the backbone (~40%+), long capped (~35%), some short lines (~5%+ or ≥1 when n≥6). */
+            const cellWarn = { s: false, m: false, l: false };
+            if (totalSents >= 6) {
+                cellWarn.s = s === 0 || (totalSents >= 12 && ps < 0.05);
+                if (totalSents >= 8) {
+                    cellWarn.l = pl > 0.35;
+                    cellWarn.m = pm < 0.4;
+                }
+            }
+
+            const policyPhase = phase === 'general' ? 'upperPrimary' : phase;
+            let maxDom = 0.72;
+            let minBuckets = 2;
+            let requireThree = false;
+            let minTotalForThree = 999;
+
+            if (policyPhase === 'lowerPrimary') maxDom = 0.82;
+            else if (policyPhase === 'upperPrimary') {
+                maxDom = 0.76;
+                minTotalForThree = 12;
+            } else if (policyPhase === 'lowerSecondary') {
+                maxDom = 0.72;
+                minTotalForThree = 10;
+            } else if (policyPhase === 'upperSecondary') {
+                maxDom = mode === 'narrative' ? 0.72 : 0.68;
+                minTotalForThree = 10;
+                requireThree = mode !== 'narrative';
+            }
+
+            if (mode === 'narrative') maxDom += 0.04;
+            if (mode === 'analytical') {
+                maxDom = Math.min(0.78, maxDom + 0.02);
+                if (totalSents >= 10) requireThree = true;
+            }
+            if (mode === 'persuasive') maxDom = Math.min(0.78, maxDom);
+
+            const lowFromSpread = totalSents >= 4 && spread < minBuckets;
+            const lowFromDom = totalSents >= 4 && dominance > maxDom;
+            const lowFromThree = totalSents >= minTotalForThree && requireThree && spread < 3;
+
+            const shapeIssue = cellWarn.s || cellWarn.m || cellWarn.l;
+            let lowVariety =
+                totalSents >= 4 &&
+                (lowFromSpread || lowFromDom || lowFromThree || (totalSents >= 6 && shapeIssue));
+            if (mode === 'analytical' && totalSents >= 10 && l === 0) lowVariety = true;
+
+            return { lowVariety, dominantKey, cellWarn };
+        }
+
+        /** Rough short/medium/long counts for Primary tooltip copy (genre tweaks only; not a strict rule). */
+        function primarySentenceMixApprox(n, mode) {
+            if (n <= 0) return { s: 0, m: 0, l: 0 };
+            let shareM = 0.45;
+            let shareL = 0.3;
+            if (mode === 'narrative') {
+                shareM = 0.5;
+                shareL = 0.25;
+            } else if (mode === 'persuasive') {
+                shareM = 0.45;
+                shareL = 0.32;
+            } else if (mode === 'analytical') {
+                shareM = 0.42;
+                shareL = 0.38;
+            }
+            let m = Math.round(n * shareM);
+            let l = Math.round(n * shareL);
+            let s = n - m - l;
+            if (n >= 6 && s < 1) {
+                m = Math.max(0, m - 1);
+                s = 1;
+            }
+            if (s < 0) {
+                l += s;
+                s = 0;
+            }
+            if (m < 0) {
+                s += m;
+                m = 0;
+            }
+            return { s, m, l };
+        }
+
+        /** Approximate typical flagged-share bands (practice drafts, this lab). Not pass/fail. */
+        const FLAGGED_SHARE_TARGETS = {
+            2: [45, 65],
+            3: [42, 60],
+            4: [38, 55],
+            5: [35, 50],
+            6: [32, 48],
+            7: [28, 45],
+            8: [26, 42],
+            9: [25, 40],
+            10: [22, 38],
+            11: [20, 36],
+            12: [18, 35]
+        };
+
+        /** Rough TTR % bands (unique ÷ total × 100) for practice drafts—longer pieces often read lower. Guide only. */
+        const TTR_BAND_GUIDE = {
+            2: [52, 72],
+            3: [50, 68],
+            4: [47, 65],
+            5: [44, 62],
+            6: [42, 58],
+            7: [40, 55],
+            8: [38, 52],
+            9: [36, 50],
+            10: [34, 48],
+            11: [32, 46],
+            12: [30, 44]
+        };
+
+        /** One short genre note for the flagged-share paragraph (Grade + band stay the main signal). */
+        function flaggedShareGenreHint(mode) {
+            if (mode === 'narrative') return 'Stories often read a little higher because of dialogue.';
+            if (mode === 'persuasive') return 'Persuasive drafts often sit in this band while you line up reasons.';
+            return 'Explanations can read higher when you quote or hedge—watch clumps of colour, not one perfect %.';
+        }
+
+        /** Simpler rhythm tooltips (a/b/c mix) for Grades 2–9. Not used on the flagged-share meter. */
+        function buildRhythmTargetsBlurbPrimary(mode, totalSents) {
+            const n = totalSents;
+            const genre =
+                mode === 'narrative'
+                    ? 'a story'
+                    : mode === 'persuasive'
+                      ? 'writing that tries to persuade'
+                      : 'an essay or explanation';
+            if (n < 3) {
+                return 'Write a few more sentences. Then we can talk about short, medium, and long.';
+            }
+            const { s, m, l } = primarySentenceMixApprox(n, mode);
+            return (
+                `With about ${n} sentences in ${genre}, many writers use roughly ${m} middle, ${l} long, and ${s} short sentence${s === 1 ? '' : 's'}. ` +
+                `That mix helps the reader. This is a guide, not a grade.`
+            );
+        }
+
+        function buildFlaggedShareTooltip(mode, percentStr, gradeSelected) {
+            const gSel = gradeSelected >= 2 && gradeSelected <= 12 ? gradeSelected : 8;
+            const pair = FLAGGED_SHARE_TARGETS[gSel];
+            const [lo, hi] = pair || [30, 50];
+            const pct = percentStr || '0%';
+            const example =
+                `Your ${pct} counts how many of your words matched our weakness lists (including glue words). ` +
+                `For Grade ${gSel}, many practice drafts on this lab sit around ${lo}–${hi}%—yours can be higher or lower and still be fine for a first try. ` +
+                flaggedShareGenreHint(mode) +
+                ` This is not a grade; ask your teacher what to improve next.`;
+            return {
+                title: `Flagged words · Grade ${gSel}`,
+                word: pct,
+                strategy: `Grade ${gSel} guide: about ${lo}–${hi}% on this meter. The big % turns red if it goes above ${hi}%. Not a grade.`,
+                example
+            };
+        }
+
+        function escapeHtml(s) {
+            return String(s)
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;');
+        }
+
+        /** Verb-first titles + chips for prioritised “How to fix” rows. */
+        const H2F_BY_ID = {
+            glue: {
+                chip: 'Glue',
+                chipClass: 'text-yellow-400',
+                title: 'Thin glue-word density',
+                detail: (n, g, hi) =>
+                    `You have ${n} glue highlights—trimming them is the fastest lever toward your Grade ${g} target (≤${hi}% flagged).`
+            },
+            weak_verbs: {
+                chip: 'Verbs',
+                chipClass: 'text-red-500',
+                title: 'Swap weak utility verbs',
+                detail: (n) => `${n} weak-verb hits—choose sharper, specific actions instead of get/go/was.`
+            },
+            filler: {
+                chip: 'Filler',
+                chipClass: 'text-pink-500',
+                title: 'Delete filler intensifiers',
+                detail: (n) => `${n} filler words (very, really, just…)—cut them or replace with one concrete detail.`
+            },
+            filter: {
+                chip: 'Filter',
+                chipClass: 'text-purple-500',
+                title: 'Remove filter words',
+                detail: (n) => `${n} filter verbs (think, feel, saw…)—show the scene or evidence directly.`
+            },
+            basic: {
+                chip: 'Basic',
+                chipClass: 'text-emerald-500',
+                title: 'Replace vague words',
+                detail: (n) => `${n} basic-word flags—trade good/nice/big for precise nouns and verbs.`
+            },
+            modal: {
+                chip: 'Modality',
+                chipClass: 'text-cyan-500',
+                title: 'Tighten hedging',
+                detail: (n) => `${n} modality hits—say what happened instead of might/could/started to.`
+            },
+            adverb: {
+                chip: 'Adverb',
+                chipClass: 'text-red-800',
+                title: 'Strengthen weak -ly lines',
+                detail: (n) => `${n} adverbs—swap for a stronger verb or one vivid image.`
+            },
+            cliche: {
+                chip: 'Cliché',
+                chipClass: 'text-slate-400',
+                title: 'Swap tired phrases',
+                detail: (n) => `${n} cliché hits—write one fresh comparison from your draft.`
+            },
+            badstart: {
+                chip: 'Openings',
+                chipClass: 'text-sky-400',
+                title: 'Vary sentence openings',
+                detail: (n, totalSents) =>
+                    `${n} sentences start with dull starters (${totalSents} sentences total)—try where, when, or a concrete subject.`
+            },
+            subjective: {
+                chip: 'Voice',
+                chipClass: 'text-rose-500',
+                title: 'Sound more objective',
+                detail: (n) => `${n} subjective references—lead with evidence, not “I think”.`
+            }
+        };
+
+        /**
+         * Returns top 3 prioritised fixes (distinct kinds). Uses flagged band, category density,
+         * rhythm, repetition, and genre.
+         */
+        function computeHowToFixTop3(ctx) {
+            const {
+                wc,
+                totalSents,
+                selectedGrade,
+                band,
+                overBand,
+                catCounts,
+                lowVariety,
+                cellWarn,
+                currentMode,
+                topRepeat,
+                ttr
+            } = ctx;
+            const hi = band ? band[1] : 50;
+            const c = (id) => catCounts[id] || 0;
+
+            const shortDraft = wc < 12 || totalSents < 2;
+            if (shortDraft) {
+                return {
+                    items: [
+                        {
+                            chip: 'Draft',
+                            chipClass: 'text-amber-500',
+                            title: 'Add more writing first',
+                            detail: 'The lab needs at least a short paragraph to rank rhythm, repetition, and openings fairly.'
+                        },
+                        {
+                            chip: 'Draft',
+                            chipClass: 'text-amber-500/80',
+                            title: 'Aim for two sentences',
+                            detail: 'Even a rough pair of sentences unlocks sentence-length and starter feedback.'
+                        },
+                        {
+                            chip: 'Draft',
+                            chipClass: 'text-amber-500/80',
+                            title: 'Re-run Brew Analysis',
+                            detail: 'Paste more text, then the Top 3 will target your biggest leverage fixes.'
+                        }
+                    ]
+                };
+            }
+
+            const candidates = [];
+
+            const glue = c('glue');
+            if (overBand && glue >= 5) {
+                const m = H2F_BY_ID.glue;
+                candidates.push({
+                    kind: 'glue',
+                    score: 96 + Math.min(glue, 35) + (glue >= 15 ? 8 : 0),
+                    chip: m.chip,
+                    chipClass: m.chipClass,
+                    title: m.title,
+                    detail: m.detail(glue, selectedGrade, hi)
+                });
+            } else if (!overBand && glue >= 25 && wc >= 30) {
+                const m = H2F_BY_ID.glue;
+                candidates.push({
+                    kind: 'glue',
+                    score: 62 + Math.min(glue, 20),
+                    chip: m.chip,
+                    chipClass: m.chipClass,
+                    title: 'Ease glue load (optional)',
+                    detail: `${m.detail(glue, selectedGrade, hi)} Optional polish while you’re under target.`
+                });
+            }
+
+            if (overBand) {
+                const ids = ['weak_verbs', 'filler', 'filter', 'basic', 'modal', 'adverb', 'cliche', 'badstart'];
+                let bestId = null;
+                let bestN = 0;
+                ids.forEach((id) => {
+                    const n = c(id);
+                    if (n > bestN) {
+                        bestN = n;
+                        bestId = id;
+                    }
+                });
+                if (bestId && bestN >= 2) {
+                    const m = H2F_BY_ID[bestId];
+                    const detailStr = bestId === 'badstart' ? m.detail(bestN, totalSents) : m.detail(bestN);
+                    candidates.push({
+                        kind: bestId,
+                        score: 84 + bestN + (bestId === 'weak_verbs' ? 4 : 0),
+                        chip: m.chip,
+                        chipClass: m.chipClass,
+                        title: m.title,
+                        detail: detailStr
+                    });
+                }
+            }
+
+            if (lowVariety && totalSents >= 6) {
+                const cw = cellWarn || { s: false, m: false, l: false };
+                let detail = 'Mix short, medium, and long so the reader gets rhythm and relief.';
+                if (cw.s) detail = 'Add at least one very short sentence for punch and contrast.';
+                else if (cw.l) detail = 'Shorten or split a few long sentences—the page needs breathing room.';
+                else if (cw.m) detail = 'Add more middle-length sentences; they should carry most of your ideas.';
+                candidates.push({
+                    kind: 'rhythm',
+                    score: 74,
+                    chip: 'Rhythm',
+                    chipClass: 'text-amber-500',
+                    title: 'Vary sentence length',
+                    detail
+                });
+            }
+
+            if (topRepeat && topRepeat.count >= 3) {
+                const show = topRepeat.label || topRepeat.stem;
+                candidates.push({
+                    kind: 'repeat',
+                    score: 58 + topRepeat.count,
+                    chip: 'Repetition',
+                    chipClass: 'text-amber-600',
+                    title: `Cut repetition: “${show}”`,
+                    detail: `That word family appears ${topRepeat.count} times—swap a few for synonyms or rephrase.`
+                });
+            }
+
+            const bs = c('badstart');
+            if (bs >= 3 && totalSents >= 4) {
+                const m = H2F_BY_ID.badstart;
+                const ratio = bs / totalSents;
+                candidates.push({
+                    kind: 'badstart',
+                    score: 48 + bs + (ratio >= 0.35 ? 12 : 0),
+                    chip: m.chip,
+                    chipClass: m.chipClass,
+                    title: m.title,
+                    detail: m.detail(bs, totalSents)
+                });
+            }
+
+            if (currentMode !== 'analytical' && c('filter') >= 4) {
+                const m = H2F_BY_ID.filter;
+                candidates.push({
+                    kind: 'filter',
+                    score: 52 + c('filter'),
+                    chip: m.chip,
+                    chipClass: m.chipClass,
+                    title: m.title,
+                    detail: m.detail(c('filter'))
+                });
+            }
+
+            if (currentMode === 'analytical' && c('subjective') >= 4) {
+                const m = H2F_BY_ID.subjective;
+                candidates.push({
+                    kind: 'subjective',
+                    score: 64 + c('subjective'),
+                    chip: m.chip,
+                    chipClass: m.chipClass,
+                    title: m.title,
+                    detail: m.detail(c('subjective'))
+                });
+            }
+
+            if (c('weak_verbs') >= 7) {
+                const m = H2F_BY_ID.weak_verbs;
+                candidates.push({
+                    kind: 'weak_verbs',
+                    score: 50 + c('weak_verbs'),
+                    chip: m.chip,
+                    chipClass: m.chipClass,
+                    title: m.title,
+                    detail: m.detail(c('weak_verbs'))
+                });
+            }
+
+            if (c('filler') >= 6) {
+                const m = H2F_BY_ID.filler;
+                candidates.push({
+                    kind: 'filler',
+                    score: 51 + c('filler'),
+                    chip: m.chip,
+                    chipClass: m.chipClass,
+                    title: m.title,
+                    detail: m.detail(c('filler'))
+                });
+            }
+
+            if (ttr < 0.4 && wc >= 45) {
+                candidates.push({
+                    kind: 'ttr',
+                    score: 42,
+                    chip: 'Variety',
+                    chipClass: 'text-emerald-400',
+                    title: 'Broaden word choice',
+                    detail: `Lexical variety (TTR) is ${(ttr * 100).toFixed(1)}%—swap repeated nouns for fresher equivalents where you can.`
+                });
+            }
+
+            candidates.sort((a, b) => b.score - a.score);
+            const seen = new Set();
+            const picked = [];
+            for (const x of candidates) {
+                if (picked.length >= 3) break;
+                if (seen.has(x.kind)) continue;
+                seen.add(x.kind);
+                picked.push(x);
+            }
+
+            const polishIds = [
+                'glue',
+                'weak_verbs',
+                'filler',
+                'filter',
+                'basic',
+                'modal',
+                'adverb',
+                'cliche',
+                'badstart',
+                'subjective'
+            ]
+                .filter((id) => (id === 'subjective' ? currentMode === 'analytical' : true))
+                .map((id) => ({ id, n: c(id) }))
+                .sort((a, b) => b.n - a.n);
+
+            while (picked.length < 3) {
+                const next = polishIds.find((p) => p.n > 0 && !seen.has(p.id));
+                if (!next) break;
+                seen.add(next.id);
+                const m = H2F_BY_ID[next.id];
+                const detailStr =
+                    next.id === 'glue'
+                        ? m.detail(next.n, selectedGrade, hi)
+                        : next.id === 'badstart'
+                          ? m.detail(next.n, totalSents)
+                          : m.detail(next.n);
+                picked.push({
+                    kind: next.id,
+                    chip: m.chip,
+                    chipClass: m.chipClass,
+                    title: m.title,
+                    detail: detailStr
+                });
+            }
+
+            let pad = 0;
+            while (picked.length < 3) {
+                picked.push({
+                    kind: 'ok' + pad++,
+                    chip: 'Nice',
+                    chipClass: 'text-emerald-500/90',
+                    title: 'No urgent pattern',
+                    detail: 'Keep using highlights in the editor—small trims to glue and weak verbs still add up.'
+                });
+            }
+
+            return { items: picked.slice(0, 3) };
+        }
+
+        function renderHowToFix(payload) {
+            const el = document.getElementById('how-to-fix-list');
+            if (!el) return;
+            el.innerHTML = payload.items
+                .map(
+                    (it, i) => `
+                <div class="flex gap-3 group">
+                    <span class="flex h-8 w-8 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-amber-600/25 to-amber-900/20 text-amber-600 text-[12px] font-black shadow-inner border border-amber-600/20">${i + 1}</span>
+                    <div class="min-w-0 flex-1 pt-0.5">
+                        <p class="text-[9px] font-black uppercase tracking-widest ${it.chipClass}">${escapeHtml(it.chip)}</p>
+                        <p class="text-sm font-bold text-[var(--text-main)] leading-snug mt-1">${escapeHtml(it.title)}</p>
+                        <p class="text-[11px] opacity-60 leading-snug mt-1.5">${escapeHtml(it.detail)}</p>
+                    </div>
+                </div>`
+                )
+                .join('');
+        }
+
+        function buildRhythmCellTip(bucket, totalSents, lowVariety, dominantKey, targetsBlurb, cellWarn, gradeForRhythm) {
+            const cw = cellWarn || { s: false, m: false, l: false };
+            const thisWarn = bucket === 'short' ? cw.s : bucket === 'medium' ? cw.m : cw.l;
+            const primary = gradeForRhythm <= 9;
+            const defsSenior = {
+                short: `Short sentences (≤10 words here): Punchy, clear, good for tension, emphasis, or young readers. Too many in a row can feel choppy; too few can make paragraphs heavy.`,
+                medium: `Medium (11–24 words): The “workhorse” band for most school writing. Healthy drafts usually mix plenty of medium with some short and long.`,
+                long: `Long (≥25 words): Useful for reasoning, layered detail, or lyrical stretches. Strings of long lines without relief can exhaust readers.`
+            };
+            const defsPrimary = {
+                short: `Short means up to 10 words here. Short sentences can make a surprise or a big feeling. Too many in a row can sound bumpy.`,
+                medium: `Medium means 11 to 24 words. Most school sentences are medium—they carry your story or your idea.`,
+                long: `Long means 25 words or more. Long sentences can fit lots of detail. Too many long ones in a row can tire the reader.`
+            };
+            const defs = primary ? defsPrimary : defsSenior;
+            let extra = '';
+            if (primary) {
+                if (totalSents < 3) {
+                    extra = `\n\nWrite a few more sentences. Then we can read short, medium, and long.`;
+                } else if (thisWarn) {
+                    if (bucket === 'short') {
+                        extra = `\n\nThis box is red because you need at least one short sentence (or more short ones). Try a very short line for a big moment.`;
+                    } else if (bucket === 'medium') {
+                        extra = `\n\nThis box is red because most of your sentences are not middle-length. Try more medium sentences to carry your ideas.`;
+                    } else {
+                        extra = `\n\nThis box is red because there are a lot of long sentences. Try splitting one or add a short sentence for balance.`;
+                    }
+                } else if (lowVariety) {
+                    const dom =
+                        dominantKey === 's' ? 'short' : dominantKey === 'l' ? 'long' : 'medium';
+                    extra = `\n\nMany of your sentences are ${dom}. Try mixing short, medium, and long so the reader stays with you.`;
+                } else {
+                    extra = `\n\nYou are mixing lengths. Read it out loud once.`;
+                }
+            } else {
+                if (totalSents < 3) {
+                    extra = `\n\nAdd a few more sentences before reading rhythm—short drafts skew all stats.`;
+                } else if (thisWarn) {
+                    extra = `\n\nThis bucket is flagged (red) because it misses the rough mix we use here: medium ≥40% of sentences, long share ≤35%, short share about 5%+ (and at least one short sentence once you have 6+ sentences). Poetry or scripted voice may break these on purpose.`;
+                } else if (lowVariety) {
+                    const dom =
+                        dominantKey === 's' ? 'short' : dominantKey === 'l' ? 'long' : 'medium';
+                    extra = `\n\nRhythm variety alert\nMost of your sentences land in one length bucket (${dom}). Try:\n• one very short line for emphasis,\n• one longer line that unpacks a single idea,\n• keep medium lines for connective tissue.\nPoetry, scripts, and spoken-word drafts sometimes break these rules on purpose—if that’s your task, tell your teacher how rhythm supports audience and purpose.`;
+                } else {
+                    extra = `\n\nNice: you’re using more than one sentence length—read aloud once to hear where a short or long line would help.`;
+                }
+            }
+            const guide = targetsBlurb
+                ? primary
+                    ? `\n\n${targetsBlurb}`
+                    : `\n\nTargets for your level & genre (guide only)\n${targetsBlurb}`
+                : '';
+            return {
+                title: primary ? 'Short, medium, long' : 'Sentence rhythm',
+                word: bucket === 'short' ? 'Short' : bucket === 'medium' ? 'Medium' : 'Long',
+                strategy: defs[bucket],
+                example: defs[bucket] + extra + guide
+            };
+        }
+
+        function bindStaticLabTipsOnce() {
+            if (window.__caramelStaticTips) return;
+            window.__caramelStaticTips = true;
+            const show = (el) => {
+                if (!tipsEnabled) return;
+                const tid = el.getAttribute('data-tip-id');
+                if (tid === null || tid === '') return;
+                const idx = parseInt(tid, 10);
+                if (Number.isNaN(idx)) return;
+                const t = tipStore[idx];
+                if (!t) return;
+                const ttTitle = document.getElementById('tooltip-title');
+                const ttWord = document.getElementById('tooltip-word');
+                const ttText = document.getElementById('tooltip-text');
+                const ttExample = document.getElementById('tooltip-example');
+                ttTitle.innerText = t.title;
+                ttWord.innerText = t.word;
+                ttText.innerText = t.strategy;
+                ttExample.innerText = t.example || '';
+                ttExample.style.display = t.example ? 'block' : 'none';
+                const tooltip = document.getElementById('tooltip');
+                tooltip.style.display = 'block';
+                tooltip.style.position = 'fixed';
+                const tw = tooltip.offsetWidth;
+                const th = tooltip.offsetHeight;
+                const rect = el.getBoundingClientRect();
+                const margin = 16;
+                let left = rect.left - tw - margin;
+                let top = rect.top + rect.height / 2 - th / 2;
+                if (left < margin) {
+                    if (el.id === 'flagged-meter-card') left = margin;
+                    else left = rect.right + margin;
+                }
+                if (left + tw > window.innerWidth - margin) left = Math.max(margin, window.innerWidth - tw - margin);
+                top = Math.max(margin, Math.min(top, window.innerHeight - th - margin));
+                tooltip.style.left = left + 'px';
+                tooltip.style.top = top + 'px';
+            };
+            const hide = () => {
+                const tooltip = document.getElementById('tooltip');
+                tooltip.style.display = 'none';
+                tooltip.style.position = '';
+                tooltip.style.left = '';
+                tooltip.style.top = '';
+            };
+            ['flagged-meter-card', 'rhythm-cell-short', 'rhythm-cell-medium', 'rhythm-cell-long'].forEach((id) => {
+                const el = document.getElementById(id);
+                if (!el) return;
+                el.addEventListener('mouseenter', () => show(el));
+                el.addEventListener('mouseleave', hide);
+            });
+        }
+
+        /** True if this token is the first word of a sentence (after whitespace / quotes following . ? ! or start of text). */
+        function isGlueAtSentenceStart(text, wordStartIndex) {
+            let i = wordStartIndex - 1;
+            while (i >= 0 && /\s/.test(text[i])) i--;
+            if (i < 0) return true;
+            if (text[i] === '\n') return true;
+            if (/[.!?]/.test(text[i])) return true;
+            if (/['"”’]/.test(text[i])) {
+                let j = i - 1;
+                while (j >= 0 && /\s/.test(text[j])) j--;
+                if (j < 0) return true;
+                if (/[.!?]/.test(text[j])) return true;
+            }
+            return false;
+        }
+
+        let brewBusy = false;
+
+        function brewStatSnapshot() {
+            const parseNum = (s) => {
+                const m = String(s ?? '').match(/-?\d+(?:\.\d+)?/);
+                return m ? parseFloat(m[0]) : 0;
+            };
+            const barEl = document.getElementById('percent-bar');
+            const barStr = barEl && barEl.style.width ? barEl.style.width : '0%';
+            const barW = Math.min(100, Math.round(parseFloat(barStr) || 0));
+            const gradeTxt = document.getElementById('grade-level')?.textContent || '';
+            const gradeNum = parseNum(gradeTxt.replace(/Level:\s*/i, ''));
+            return {
+                words: parseNum(document.getElementById('stat-words')?.textContent),
+                sents: parseNum(document.getElementById('sent-total')?.textContent),
+                avg: parseNum(document.getElementById('stat-avg')?.textContent),
+                short: parseNum(document.getElementById('sent-short')?.textContent),
+                medium: parseNum(document.getElementById('sent-medium')?.textContent),
+                long: parseNum(document.getElementById('sent-long')?.textContent),
+                weakPct: parseNum(document.getElementById('weak-percent')?.textContent),
+                barW,
+                ttr: parseNum(document.getElementById('stat-ttr')?.textContent),
+                soph: parseNum(document.getElementById('stat-soph')?.textContent),
+                grade: gradeNum
+            };
+        }
+
+        function easeOutCubic(t) {
+            return 1 - Math.pow(1 - t, 3);
+        }
+
+        function applyBrewNumericSnapshot(s) {
+            const w = document.getElementById('stat-words');
+            const st = document.getElementById('sent-total');
+            const av = document.getElementById('stat-avg');
+            const ss = document.getElementById('sent-short');
+            const sm = document.getElementById('sent-medium');
+            const sl = document.getElementById('sent-long');
+            const wp = document.getElementById('weak-percent');
+            const bar = document.getElementById('percent-bar');
+            const ttr = document.getElementById('stat-ttr');
+            const soph = document.getElementById('stat-soph');
+            const gl = document.getElementById('grade-level');
+            const g = Math.max(0, Math.min(12, Math.round(s.grade)));
+            if (w) w.textContent = String(Math.round(s.words));
+            if (st) st.textContent = String(Math.round(s.sents));
+            if (av) {
+                const v = Number(s.avg);
+                if (!Number.isFinite(v)) av.textContent = '0';
+                else av.textContent = Math.abs(v) < 0.05 ? '0' : v.toFixed(1);
+            }
+            if (ss) ss.textContent = String(Math.round(s.short));
+            if (sm) sm.textContent = String(Math.round(s.medium));
+            if (sl) sl.textContent = String(Math.round(s.long));
+            if (wp) wp.textContent = Math.round(s.weakPct) + '%';
+            if (bar) bar.style.width = Math.min(100, Math.round(s.barW)) + '%';
+            if (ttr) ttr.textContent = (Number.isFinite(s.ttr) ? s.ttr : 0).toFixed(1) + '%';
+            if (soph) soph.textContent = String(Math.round(s.soph));
+            if (gl) gl.textContent = `Level: ${g}`;
+        }
+
+        function runBrewCountTween(from, to, durationMs, done) {
+            const a = { ...from };
+            const b = { ...to };
+            const start = performance.now();
+            const mix = (x, y, t) => x + (y - x) * t;
+            function frame(now) {
+                const elapsed = now - start;
+                const u = Math.min(1, elapsed / durationMs);
+                const t = easeOutCubic(u);
+                applyBrewNumericSnapshot({
+                    words: mix(a.words, b.words, t),
+                    sents: mix(a.sents, b.sents, t),
+                    avg: mix(a.avg, b.avg, t),
+                    short: mix(a.short, b.short, t),
+                    medium: mix(a.medium, b.medium, t),
+                    long: mix(a.long, b.long, t),
+                    weakPct: mix(a.weakPct, b.weakPct, t),
+                    barW: mix(a.barW, b.barW, t),
+                    ttr: mix(a.ttr, b.ttr, t),
+                    soph: mix(a.soph, b.soph, t),
+                    grade: mix(a.grade, b.grade, t)
+                });
+                if (u < 1) requestAnimationFrame(frame);
+                else {
+                    applyBrewNumericSnapshot(b);
+                    if (typeof done === 'function') done();
+                }
+            }
+            requestAnimationFrame(frame);
+        }
+
+        function brewAnalyze() {
+            if (brewBusy) return;
+            brewBusy = true;
+            const btn = document.getElementById('brew-btn');
+            const vfx = document.getElementById('brew-vfx');
+            if (btn) btn.disabled = true;
+            const fromSnap = brewStatSnapshot();
+            if (vfx) {
+                vfx.classList.remove('brew-vfx--play');
+                void vfx.offsetWidth;
+                vfx.classList.add('brew-vfx--play');
+            }
+            analyzeText();
+            const toSnap = brewStatSnapshot();
+            applyBrewNumericSnapshot(fromSnap);
+            setTimeout(() => {
+                runBrewCountTween(fromSnap, toSnap, 1640, null);
+            }, 260);
+            setTimeout(() => {
+                if (vfx) vfx.classList.remove('brew-vfx--play');
+                brewBusy = false;
+                if (btn) btn.disabled = false;
+            }, 2000);
+        }
+
+        function analyzeText() {
+            // Standardize newlines from external pastes
+            const textToAnalyze = (editor.innerText || "").replace(/\r\n/g, '\n');
+            if (!textToAnalyze.trim()) {
+                focusedRepeatStem = null;
+                tipStore.length = 0;
+                updateStats("", 0);
+                return;
+            }
+
+            tipStore.length = 0;
+            const matchMap = new Map();
+            let weakCount = 0;
+            const activeLists = [...baseLists, ...(currentMode === 'analytical' ? analyticalLists : [])];
+
+            // 1. IMPROVED STRUCTURAL CHECK: Paragraph-Aware Bad Starts
+            let badStartIndices = new Set();
+            let globalIdx = 0;
+            
+            // Split on 2+ newlines to reliably find true paragraphs, keeping separators to maintain exact indices
+            const paragraphsAndSeps = textToAnalyze.split(/(\n{2,})/);
+            
+            paragraphsAndSeps.forEach(part => {
+                if (/^\n+$/.test(part)) {
+                    globalIdx += part.length;
+                    return;
+                }
+                if (!part.trim()) {
+                    globalIdx += part.length;
+                    return;
+                }
+                
+                const para = part;
+                // Split sentences on punctuation followed by whitespace (including soft \n), keeping separators
+                const sentencesAndSeps = para.split(/((?<=[.?!]['"”’)]*)\s+)/);
+                let caught = [];
+                let sOffset = 0;
+
+                sentencesAndSeps.forEach(sentOrSep => {
+                    if (/^\s+$/.test(sentOrSep) || !sentOrSep.trim()) {
+                        sOffset += sentOrSep.length;
+                        return;
+                    }
+                    
+                    const sent = sentOrSep;
+                    // Safely find the first word, ignoring leading quotes
+                    const firstWordMatch = sent.match(/^\s*['"”’]*\b(\w+)\b/i);
+                    
+                    if (firstWordMatch && new Set(badStartConfig.words.map(w => w.toLowerCase())).has(firstWordMatch[1].toLowerCase())) {
+                        const wordIndex = globalIdx + sOffset + firstWordMatch.index + firstWordMatch[0].indexOf(firstWordMatch[1]);
+                        caught.push({ i: wordIndex });
+                    }
+                    sOffset += sent.length;
+                });
+
+                const sentenceCount = sentencesAndSeps.filter(s => s.trim().length > 0 && !/^\s+$/.test(s)).length;
+                if (sentenceCount > 1 && (caught.length / sentenceCount) >= 0.4) {
+                    caught.forEach(c => badStartIndices.add(c.i));
+                }
+                globalIdx += para.length;
+            });
+
+            // 2. HIGH-DENSITY CATEGORIZATION
+            activeLists.forEach(list => {
+                const regex = list.regex || new RegExp(`\\b(${[...list.words].sort((a,b) => b.length - a.length).map(escapeRegExp).join('|')})\\b`, 'gi');
+                let m;
+                while ((m = regex.exec(textToAnalyze)) !== null) {
+                    if (!matchMap.has(m.index)) {
+                        matchMap.set(m.index, { len: m[0].length, category: list, rawWord: m[0], isBadStart: false, isRepetition: false });
+                        if (list.isWeakness) weakCount++;
+                    }
+                }
+            });
+
+            // 3. THE GLUE SWEEP
+            const glueRegex = new RegExp(`\\b(${[...glueList.words].sort((a,b) => b.length - a.length).map(escapeRegExp).join('|')})\\b`, 'gi');
+            let gm;
+            while ((gm = glueRegex.exec(textToAnalyze)) !== null) {
+                if (!matchMap.has(gm.index)) {
+                    matchMap.set(gm.index, {
+                        len: gm[0].length,
+                        category: glueList,
+                        rawWord: gm[0],
+                        isBadStart: false,
+                        isRepetition: false,
+                        glueSentenceStart: isGlueAtSentenceStart(textToAnalyze, gm.index)
+                    });
+                    weakCount++;
+                }
+            }
+
+            // 4. REPETITION ENGINE
+            const stemFreq = {};
+            const stopWords = new Set(glueList.words);
+            const words = textToAnalyze.match(/\b\w+['’]?\w*\b/g) || [];
+            words.forEach(w => {
+                const low = w.toLowerCase();
+                if (low.length < 3 || stopWords.has(low)) return;
+                const stem = getStem(low);
+                stemFreq[stem] = (stemFreq[stem] || 0) + 1;
+            });
+            
+            Object.keys(stemFreq).filter(s => stemFreq[s] >= 3).forEach(stem => {
+                const wordRegex = new RegExp(`\\b\\w*${escapeRegExp(stem)}\\w*\\b`, 'gi');
+                let wm;
+                while ((wm = wordRegex.exec(textToAnalyze)) !== null) {
+                    if (matchMap.has(wm.index)) {
+                        const ent = matchMap.get(wm.index);
+                        ent.isRepetition = true;
+                        ent.repeatStem = stem;
+                    } else {
+                        // Flag uncolored "good" words as repetitive without background color
+                        matchMap.set(wm.index, {
+                            len: wm[0].length,
+                            rawWord: wm[0],
+                            isBadStart: false,
+                            isRepetition: true,
+                            repeatStem: stem,
+                            category: { id: 'frequent', title: 'Repetition', class: '', strategy: 'Word family used too often.', fallbackTip: 'Try a synonym.' }
+                        });
+                    }
+                }
+            });
+
+            // 5. APPLY STRUCTURAL BAD STARTS
+            badStartIndices.forEach(idx => {
+                if (matchMap.has(idx)) {
+                    matchMap.get(idx).isBadStart = true;
+                } else {
+                    const wordMatch = textToAnalyze.substring(idx).match(/^\w+/);
+                    if (wordMatch) {
+                        matchMap.set(idx, { len: wordMatch[0].length, rawWord: wordMatch[0], isBadStart: true, isRepetition: false, category: badStartConfig });
+                        weakCount++;
+                    }
+                }
+            });
+
+            // 6. RECONSTRUCT HTML
+            let finalHTML = "";
+            let lastIdx = 0;
+            const sorted = Array.from(matchMap.keys()).sort((a, b) => a - b);
+            sorted.forEach(idx => {
+                if (idx < lastIdx) return;
+                const d = matchMap.get(idx);
+                finalHTML += textToAnalyze.substring(lastIdx, idx).replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
+                
+                let classes = d.category.class || "";
+                if (d.isBadStart) classes += " hl-bad-start";
+                if (d.isRepetition) classes += " hl-frequent";
+                
+                const wk = d.rawWord.toLowerCase();
+                let exampleText;
+                if (window.LAB && typeof LAB.resolveWorkedExample === 'function') {
+                    exampleText = LAB.resolveWorkedExample(d.rawWord, d.category.id, {
+                        isBadStart: d.isBadStart,
+                        level: exampleLevelForLab(),
+                        glueSentenceStart: d.category.id === 'glue' ? !!d.glueSentenceStart : false
+                    });
+                } else {
+                    let tip = d.category.specificTips?.[wk] || d.category.specificTips?.[getStem(wk)];
+                    if (!tip && d.isBadStart) tip = currentMode === 'analytical' ? badStartConfig.specificTips.analytical_default : (currentMode === 'persuasive' ? badStartConfig.specificTips.persuasive_default : badStartConfig.specificTips.narrative_default);
+                    if (!tip) tip = d.category.fallbackTip || d.category.strategy;
+                    exampleText = tip;
+                }
+                const tipId = pushTip({ title: d.category.title, word: d.rawWord, strategy: d.category.strategy, example: exampleText });
+                let stemForAttr = '';
+                if (d.isRepetition) {
+                    stemForAttr =
+                        d.repeatStem != null && String(d.repeatStem).length > 0
+                            ? String(d.repeatStem)
+                            : getStem(d.rawWord.toLowerCase());
+                }
+                const repeatAttr = stemForAttr ? ` data-repeat-stem="${escapeHtmlAttr(stemForAttr)}"` : '';
+                finalHTML += `<span class="hl ${classes.trim()}" data-tip-id="${tipId}"${repeatAttr}>${textToAnalyze.substring(idx, idx + d.len).replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]))}</span>`;
+                lastIdx = idx + d.len;
+            });
+            finalHTML += textToAnalyze.substring(lastIdx).replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
+            editor.innerHTML = finalHTML.replace(/\n/g, '<br>');
+
+            updateStats(textToAnalyze, weakCount);
+            attachTooltipEvents();
+            bindRepeatStemFocusOnce();
+        }
+
+        function updateStats(text, weakCount) {
+            const words = text.match(/\b\w+['’]?\w*\b/g) || [];
+            const wc = words.length;
+            
+            // True sentence split to ignore soft-returns
+            const sentencesAndSeps = text.split(/((?<=[.?!]['"”’)]*)\s+)/);
+            const actualSentences = sentencesAndSeps.filter(s => s.trim().length > 0 && !/^\s+$/.test(s));
+            const totalSents = actualSentences.length;
+            
+            document.getElementById('stat-words').innerText = wc;
+            document.getElementById('sent-total').innerText = totalSents;
+            document.getElementById('stat-avg').innerText = totalSents > 0 ? (wc / totalSents).toFixed(1) : 0;
+
+            let gl = 0;
+            if (wc > 0 && totalSents > 0) {
+                const chars = words.join('').length;
+                const charsPerWord = chars / wc;
+                const wordsPerSentence = Math.min(wc / totalSents, 20);
+                const rawGrade = 4.71 * charsPerWord + 0.5 * wordsPerSentence - 21.43;
+                gl = Math.max(1, Math.min(12, Math.round(rawGrade)));
+            }
+            document.getElementById('grade-level').innerText = `Level: ${gl}`;
+            const rhythmPhase = schoolPhaseFromGrade(gl);
+            
+            const baseWeakness = wc > 0 ? (weakCount / wc) * 100 : 0;
+            const weakPctEl = document.getElementById('weak-percent');
+            weakPctEl.innerText = Math.round(baseWeakness) + "%";
+            const band = FLAGGED_SHARE_TARGETS[selectedGrade];
+            const overBand = band && baseWeakness > band[1];
+            weakPctEl.classList.toggle('text-red-500', !!overBand);
+            weakPctEl.classList.toggle('text-amber-600', !overBand);
+            document.getElementById('percent-bar').style.width = Math.min(Math.round(baseWeakness), 100) + "%";
+            const tgtEl = document.getElementById('flagged-grade-target');
+            if (tgtEl && band) {
+                tgtEl.textContent = `Grade ${selectedGrade} target ${band[1]}%`;
+            }
+
+            const uniqueTypes = new Set(words.map((w) => w.toLowerCase()));
+            const uniqueCount = uniqueTypes.size;
+            const ttr = wc > 0 ? uniqueCount / wc : 0;
+            document.getElementById('stat-ttr').innerText = (ttr * 100).toFixed(1) + "%";
+            const tg = TTR_BAND_GUIDE[selectedGrade] || TTR_BAND_GUIDE[8];
+            const ttrGuideEl = document.getElementById('ttr-grade-guide');
+            if (ttrGuideEl) {
+                ttrGuideEl.textContent = `Grade ${selectedGrade} guide (practice): ~${tg[0]}–${tg[1]}% · shorter drafts often read higher`;
+            }
+            const ttrCard = document.getElementById('ttr-card');
+            const ttrPct = ttr * 100;
+            const ttrInBand = wc >= 12 && ttrPct >= tg[0] && ttrPct <= tg[1];
+            if (ttrCard) ttrCard.classList.toggle('sidebar-metric--ok', ttrInBand);
+
+            let sophCount = 0;
+            if (window.LAB && typeof LAB.countSophisticatedDistinct === 'function') {
+                const weakSet = LAB.buildWeakTokenSetFromLists(baseLists, currentMode === 'analytical' ? analyticalLists : [], glueList);
+                sophCount = LAB.countSophisticatedDistinct(words, weakSet);
+            }
+            const sophEl = document.getElementById('stat-soph');
+            sophEl.textContent = String(sophCount);
+            const sophCard = document.getElementById('soph-card');
+            const sophMet = sophCount >= 10;
+            if (sophCard) sophCard.classList.toggle('sidebar-metric--ok', sophMet);
+            const sophValueRow = document.getElementById('soph-value-row');
+            if (sophValueRow) {
+                sophValueRow.classList.toggle('text-emerald-500', sophMet);
+                sophValueRow.classList.toggle('text-violet-400', !sophMet);
+            }
+
+            const stemFreq = {};
+            const stopWords = new Set(glueList.words);
+            words.forEach(w => {
+                const low = w.toLowerCase();
+                if (low.length < 3 || stopWords.has(low)) return;
+                const stem = getStem(low);
+                stemFreq[stem] = (stemFreq[stem] || 0) + 1;
+            });
+            const topFreq = Object.entries(stemFreq).filter(f => f[1] >= 3).sort((a,b) => b[1]-a[1]);
+            const topRepeat =
+                topFreq.length > 0
+                    ? (() => {
+                          const stem = topFreq[0][0];
+                          const count = topFreq[0][1];
+                          const label = mostCommonSurfaceFormForStem(stem, words, stopWords);
+                          return { stem, count, label };
+                      })()
+                    : null;
+            document.getElementById('freq-words').innerHTML =
+                topFreq.length > 0
+                    ? topFreq
+                          .slice(0, 9)
+                          .map(([stem, c]) => {
+                              const display = mostCommonSurfaceFormForStem(stem, words, stopWords);
+                              const show = display.length > 18 ? `${display.slice(0, 18)}…` : display;
+                              const safeStem = escapeHtmlAttr(stem);
+                              const tipTitle = display.replace(/"/g, '&quot;');
+                              const isActive = focusedRepeatStem === stem;
+                              const chipClasses = isActive
+                                  ? 'ring-2 ring-orange-500/50 bg-orange-500/15 border-orange-500/40'
+                                  : 'border-white/10 bg-white/10';
+                              return `<div role="button" tabindex="0" data-repeat-stem="${safeStem}" aria-pressed="${isActive ? 'true' : 'false'}" title="Focus “${tipTitle}” in the text. Click again to clear." class="flex min-w-0 justify-between items-center gap-2 text-xs sm:text-sm rounded-lg px-2.5 py-2 border cursor-pointer transition-shadow ${chipClasses} focus:outline-none focus-visible:ring-2 focus-visible:ring-orange-500/60"><span class="truncate text-orange-300">${show}</span><span class="shrink-0 text-base font-black text-orange-300">${c}x</span></div>`;
+                          })
+                          .join('')
+                    : `<p class="opacity-70 text-sm italic col-span-full">Clear as a bell.</p>`;
+            bindFreqWordChipsOnce();
+
+            const activeLists = [...baseLists, ...(currentMode === 'analytical' ? analyticalLists : []), { ...badStartConfig, color: 'text-sky-400' }, glueList, repetitionCategoryEntry];
+            const catCounts = {};
+            activeLists.forEach((l) => {
+                let count = 0;
+                if (l.id === 'badstart') count = editor.querySelectorAll('.hl-bad-start').length;
+                else count = editor.querySelectorAll(`.${l.class}`).length;
+                catCounts[l.id] = count;
+            });
+            const allowedCategoryIds = new Set(activeLists.map((l) => l.id));
+            if (focusedCategoryId && !allowedCategoryIds.has(focusedCategoryId)) focusedCategoryId = null;
+
+            document.getElementById('category-list').innerHTML = activeLists
+                .map((l) => {
+                    const count = catCounts[l.id];
+                    const safeTitle = String(l.title).replace(/"/g, '&quot;');
+                    return `<div role="button" tabindex="0" data-category-id="${l.id}" aria-pressed="false" title="Show only ${safeTitle} highlights. Click again to show all categories." class="flex justify-between items-center text-[10px] font-black p-4 stat-card rounded-2xl cursor-pointer transition-shadow ring-offset-2 ring-offset-[var(--bg-sidebar)] focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-500/60"><span class="${l.color} uppercase tracking-tighter pointer-events-none">${l.title}</span><span class="opacity-30 font-bold pointer-events-none">${count}</span></div>`;
+                })
+                .join('');
+            bindCategoryFocusOnce();
+            syncCategoryFocusRows();
+            syncCategoryFocusHighlights();
+            
+            let rhythm = {s:0, m:0, l:0};
+            actualSentences.forEach(s => { 
+                const w = (s.match(/\b\w+['’]?\w*\b/g) || []).length; 
+                if (w > 0 && w <= 10) rhythm.s++; 
+                else if (w >= 25) rhythm.l++; 
+                else if (w > 10) rhythm.m++; 
+            });
+            document.getElementById('sent-short').innerText = rhythm.s;
+            document.getElementById('sent-medium').innerText = rhythm.m;
+            document.getElementById('sent-long').innerText = rhythm.l;
+
+            const { lowVariety, dominantKey, cellWarn } = evaluateRhythmVariety(rhythm, totalSents, rhythmPhase, currentMode);
+            const targetsBlurb =
+                selectedGrade <= 9
+                    ? buildRhythmTargetsBlurbPrimary(currentMode, totalSents)
+                    : buildRhythmTargetsBlurb(rhythmPhase, currentMode);
+            const rowEl = document.getElementById('rhythm-row');
+            if (rowEl) rowEl.classList.toggle('rhythm-row-issue', lowVariety && totalSents >= 4);
+            [['rhythm-cell-short', 's', 'short'], ['rhythm-cell-medium', 'm', 'medium'], ['rhythm-cell-long', 'l', 'long']].forEach(([cellId, dk, bucket]) => {
+                const cell = document.getElementById(cellId);
+                if (!cell) return;
+                const warn = !!(cellWarn && cellWarn[dk]);
+                const okRhythm = !warn && totalSents >= 3;
+                cell.classList.toggle('rhythm-warn', warn);
+                cell.classList.toggle('rhythm-ok', okRhythm);
+                const rTip = buildRhythmCellTip(bucket, totalSents, lowVariety, dominantKey, targetsBlurb, cellWarn, selectedGrade);
+                cell.setAttribute('data-tip-id', String(pushTip(rTip)));
+            });
+
+            const pctStr = Math.round(baseWeakness) + '%';
+            const flagTip = buildFlaggedShareTooltip(currentMode, pctStr, selectedGrade);
+            const fm = document.getElementById('flagged-meter-card');
+            if (fm) fm.setAttribute('data-tip-id', String(pushTip(flagTip)));
+            const subEl = document.getElementById('flagged-meter-sub');
+            if (subEl) {
+                subEl.textContent = `Hover for guide · red if above Grade ${selectedGrade} target · not a grade`;
+            }
+
+            renderHowToFix(
+                computeHowToFixTop3({
+                    wc,
+                    totalSents,
+                    selectedGrade,
+                    band,
+                    overBand,
+                    catCounts,
+                    lowVariety,
+                    cellWarn,
+                    currentMode,
+                    topRepeat,
+                    ttr
+                })
+            );
+
+            requestAnimationFrame(updateSidebarScrollFades);
+        }
+
+        function updateSidebarScrollFades() {
+            const el = document.getElementById('sidebar-scroll');
+            if (!el) return;
+            const { scrollTop } = el;
+            const eps = 8;
+            const atTop = scrollTop <= eps;
+            el.classList.toggle('sidebar-scroll--at-top', atTop);
+        }
+
+        function bindSidebarScrollFadesOnce() {
+            if (window.__caramelSidebarFades) return;
+            window.__caramelSidebarFades = true;
+            const el = document.getElementById('sidebar-scroll');
+            if (!el) return;
+            el.addEventListener('scroll', updateSidebarScrollFades, { passive: true });
+            let resizeT;
+            window.addEventListener('resize', () => {
+                clearTimeout(resizeT);
+                resizeT = setTimeout(updateSidebarScrollFades, 120);
+            });
+            if (typeof ResizeObserver !== 'undefined') {
+                const ro = new ResizeObserver(() => updateSidebarScrollFades());
+                ro.observe(el);
+            }
+        }
+
+        /** Keep tooltip inside the viewport; prefer above the word, else below (fixed = works with editor scroll). */
+        function positionTooltipFixedNearWord(tooltipEl, wordRect) {
+            const margin = 12;
+            const gap = 8;
+            const vw = window.innerWidth;
+            const vh = window.innerHeight;
+            tooltipEl.style.position = 'fixed';
+            tooltipEl.style.display = 'block';
+            void tooltipEl.offsetWidth;
+            const tw = tooltipEl.offsetWidth;
+            const th = tooltipEl.offsetHeight;
+
+            let left = wordRect.left + wordRect.width / 2 - tw / 2;
+            left = Math.max(margin, Math.min(left, vw - tw - margin));
+
+            let top = wordRect.top - th - gap;
+            const fitsAbove = top >= margin;
+            const fitsBelow = wordRect.bottom + gap + th <= vh - margin;
+
+            if (fitsAbove) {
+                /* above the word */
+            } else if (fitsBelow) {
+                top = wordRect.bottom + gap;
+            } else {
+                top = Math.max(margin, Math.min(wordRect.top - th - gap, vh - th - margin));
+            }
+
+            left = Math.max(margin, Math.min(left, vw - tw - margin));
+            top = Math.max(margin, Math.min(top, vh - th - margin));
+
+            tooltipEl.style.left = left + 'px';
+            tooltipEl.style.top = top + 'px';
+        }
+
+        function attachTooltipEvents() {
+            document.querySelectorAll('#editor .hl').forEach(hl => {
+                hl.addEventListener('mouseenter', (e) => {
+                    if (!tipsEnabled && !hl.classList.contains('stat-card')) return;
+                    if (hl.classList.contains('dimmed-focus')) return;
+                    const ttTitle = document.getElementById('tooltip-title');
+                    const ttWord = document.getElementById('tooltip-word');
+                    const ttText = document.getElementById('tooltip-text');
+                    const ttExample = document.getElementById('tooltip-example');
+                    let t = null;
+                    const tidAttr = hl.getAttribute('data-tip-id');
+                    if (tidAttr !== null && tidAttr !== '') {
+                        const idx = parseInt(tidAttr, 10);
+                        if (!Number.isNaN(idx)) t = tipStore[idx];
+                    }
+                    if (!t && hl.dataset.title) {
+                        t = {
+                            title: hl.dataset.title,
+                            word: hl.dataset.word || '',
+                            strategy: hl.dataset.strategy || '',
+                            example: (hl.dataset.example || '').replace(/\\n/g, '\n')
+                        };
+                    }
+                    if (!t) return;
+                    ttTitle.innerText = t.title;
+                    ttWord.innerText = t.word;
+                    ttText.innerText = t.strategy;
+                    ttExample.innerText = t.example || '';
+                    ttExample.style.display = t.example ? 'block' : 'none';
+                    const rect = hl.getBoundingClientRect();
+                    positionTooltipFixedNearWord(tooltip, rect);
+                });
+                hl.addEventListener('mouseleave', () => {
+                    tooltip.style.display = 'none';
+                    tooltip.style.position = '';
+                    tooltip.style.left = '';
+                    tooltip.style.top = '';
+                });
+            });
+        }
+
+        window.onload = () => {
+            syncGradeSelectUI();
+            bindStaticLabTipsOnce();
+            bindSidebarScrollFadesOnce();
+            document.getElementById('editor').innerHTML = "";
+            analyzeText();
+        }
+    </script>
+</body>
+</html>
